@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Expense Tracker — Process Step by Step</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+
+  <!-- Mermaid.js -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#6c63ff',
+        primaryTextColor: '#ffffff',
+        primaryBorderColor: '#5a52d5',
+        lineColor: '#a0a0c0',
+        secondaryColor: '#1e1e3a',
+        tertiaryColor: '#2a2a4a',
+        background: '#ffffff',
+        mainBkg: '#6c63ff',
+        nodeBorder: '#5a52d5',
+        clusterBkg: '#f0eeff',
+        titleColor: '#2d2d5e',
+        edgeLabelBackground: '#f0eeff',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '14px'
+      },
+      flowchart: { curve: 'basis', padding: 20 },
+      sequence: { actorMargin: 80 }
+    });
+  </script>
+
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      line-height: 1.75;
+      color: #1a1a2e;
+      background: #ffffff;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 40px;
+    }
+
+    /* ── Headings ───────────────────────────────────────────────────── */
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #2d2d5e;
+      border-bottom: 3px solid #6c63ff;
+      padding-bottom: 12px;
+      margin: 40px 0 20px;
+    }
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #3a3a6e;
+      border-left: 4px solid #6c63ff;
+      padding-left: 14px;
+      margin: 36px 0 14px;
+    }
+    h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: #4a4a8a;
+      margin: 28px 0 10px;
+    }
+    h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #5a5a9a;
+      margin: 20px 0 8px;
+    }
+
+    /* ── Paragraphs & Text ──────────────────────────────────────────── */
+    p { margin: 10px 0; color: #333355; }
+    strong { color: #2d2d5e; font-weight: 700; }
+    em { color: #5a5a9a; }
+    a { color: #6c63ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Lists ──────────────────────────────────────────────────────── */
+    ul, ol { margin: 12px 0 12px 28px; }
+    li { margin: 5px 0; color: #333355; }
+
+    /* ── Blockquote ─────────────────────────────────────────────────── */
+    blockquote {
+      border-left: 4px solid #6c63ff;
+      background: #f0eeff;
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #3a3a6e;
+      font-style: italic;
+    }
+    blockquote strong { color: #4a2d9e; }
+
+    /* ── Inline Code ────────────────────────────────────────────────── */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      background: #eeeeff;
+      color: #5a2d9e;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* ── Code Blocks ────────────────────────────────────────────────── */
+    .code-block {
+      position: relative;
+      background: #1a1a2e;
+      border-radius: 10px;
+      margin: 18px 0;
+      overflow: hidden;
+      border: 1px solid #2d2d5e;
+    }
+    .code-lang {
+      display: block;
+      background: #2d2d5e;
+      color: #a0a0d0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 4px 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .code-block pre {
+      padding: 16px 20px;
+      overflow-x: auto;
+      margin: 0;
+    }
+    .code-block pre code {
+      background: transparent;
+      color: #c8c8f0;
+      font-size: 12.5px;
+      padding: 0;
+    }
+
+    /* ── Mermaid Diagrams ───────────────────────────────────────────── */
+    .mermaid-wrap {
+      background: #f8f7ff;
+      border: 1px solid #dddaff;
+      border-radius: 12px;
+      padding: 28px 16px;
+      margin: 20px 0;
+      text-align: center;
+      overflow-x: auto;
+    }
+    .mermaid svg {
+      max-width: 100%;
+    }
+
+    /* ── Tables ─────────────────────────────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(108,99,255,0.08);
+    }
+    tr:first-child td {
+      background: #6c63ff;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid #e8e6ff;
+      color: #333355;
+      font-size: 13.5px;
+    }
+    tr:nth-child(odd):not(:first-child) td { background: #f8f7ff; }
+    tr:nth-child(even) td { background: #ffffff; }
+    tr:last-child td { font-weight: 700; color: #2d2d5e; }
+
+    /* ── Horizontal Rule ────────────────────────────────────────────── */
+    hr {
+      border: none;
+      border-top: 1.5px solid #e0ddff;
+      margin: 36px 0;
+    }
+
+    /* ── Print Styles ───────────────────────────────────────────────── */
+    @media print {
+      body { padding: 20px 24px; font-size: 12.5px; max-width: 100%; }
+      .mermaid-wrap { break-inside: avoid; page-break-inside: avoid; }
+      .code-block { break-inside: avoid; page-break-inside: avoid; }
+      h1, h2, h3 { page-break-after: avoid; }
+      table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<h1>📖 Smart Expense Tracker — Process Step by Step</h1>
+<blockquote>This document explains <strong>exactly what happens</strong> at every step a user takes in the app, and <strong>exactly how to deploy</strong> the full app (web + mobile) from zero to live.</blockquote>
+<hr>
+<h1>PART 1 — USER FLOW: Step by Step</h1>
+<hr>
+<h2>🔵 STEP 0 — User Opens the App</h2>
+<div class="code-block"><pre><code>User opens browser → types your-app.vercel.app
+          OR
+User opens installed PWA from Android home screen
+          OR
+User opens React Native app from Play Store</code></pre></div>
+<p><strong>What happens under the hood:</strong></p>
+<ul>
+<li>Browser/phone loads the React frontend from <strong>Vercel's CDN</strong></li>
+<li>React Router checks if the user has a valid <strong>JWT token</strong> in localStorage</li>
+<li>If token exists and is not expired → goes directly to Dashboard</li>
+<li>If no token → redirect to Login page</li>
+</ul>
+<div class="mermaid-wrap"><pre class="mermaid">flowchart LR
+    A[App Opens] --> B{JWT Token\nin localStorage?}
+    B -->|Yes + Valid| C[Go to Dashboard]
+    B -->|No / Expired| D[Go to Login Page]</pre></div>
+<hr>
+<h2>🟢 STEP 1 — Registration / Login</h2>
+<h3>1A. New User — Register with Email</h3>
+<div class="code-block"><pre><code>User fills: Name | Email | Password → clicks "Sign Up"</code></pre></div>
+<p><strong>What happens:</strong></p>
+<ol>
+<li>React sends <code>POST /api/auth/register</code> to FastAPI backend</li>
+<li>FastAPI validates the data (Pydantic schema)</li>
+<li>Password is <strong>hashed with bcrypt</strong> — never stored as plain text</li>
+<li>New row created in <code>users</code> table in <strong>PostgreSQL (Supabase)</strong></li>
+<li>A <strong>JWT access token</strong> (15 min) + <strong>refresh token</strong> (7 days) are created</li>
+<li>Tokens sent back to React → stored in localStorage</li>
+<li>User is redirected to Dashboard</li>
+</ol>
+<h3>1B. Existing User — Login</h3>
+<div class="code-block"><pre><code>User enters Email + Password → clicks "Login"</code></pre></div>
+<p><strong>What happens:</strong></p>
+<ol>
+<li><code>POST /api/auth/login</code> called</li>
+<li>FastAPI finds user by email in DB</li>
+<li><strong>bcrypt.verify</strong> compares entered password with stored hash</li>
+<li>If match → new JWT token generated and returned</li>
+<li>React stores token → redirect to Dashboard</li>
+</ol>
+<h3>1C. Google OAuth Login (One-click)</h3>
+<div class="code-block"><pre><code>User clicks "Continue with Google"</code></pre></div>
+<p><strong>What happens:</strong></p>
+<ol>
+<li>React redirects to <code>GET /api/auth/google</code></li>
+<li>FastAPI redirects to <strong>Google's OAuth consent screen</strong></li>
+<li>User approves → Google sends back a <code>code</code> to your backend</li>
+<li>FastAPI exchanges <code>code</code> for user's <strong>Google profile</strong> (name, email, photo)</li>
+<li>If user already exists → log in | If new → create account</li>
+<li>JWT token generated → returned to frontend</li>
+<li>Redirected to Dashboard ✅</li>
+</ol>
+<div class="mermaid-wrap"><pre class="mermaid">sequenceDiagram
+    participant U as User
+    participant R as React App
+    participant F as FastAPI
+    participant G as Google OAuth
+    participant DB as PostgreSQL
+
+    U->>R: Click "Login with Google"
+    R->>F: GET /api/auth/google
+    F->>G: Redirect to consent screen
+    G->>U: Shows permissions popup
+    U->>G: Approves
+    G->>F: Returns auth code
+    F->>G: Exchange code → profile
+    G->>F: {name, email, google_id}
+    F->>DB: Find or create user
+    DB->>F: User record
+    F->>R: JWT Token
+    R->>U: Redirect to Dashboard ✅</pre></div>
+<hr>
+<h2>🟡 STEP 2 — Dashboard (Home Screen)</h2>
+<p>After login, user lands on the <strong>Dashboard</strong>. This is loaded by calling:</p>
+<div class="code-block"><pre><code>GET /api/dashboard/summary     → total spent this month, income, savings
+GET /api/dashboard/breakdown   → % split by category (Food 40%, Travel 20%...)
+GET /api/dashboard/trend       → day-by-day spending for this month
+GET /api/insights              → AI-generated insights (loaded separately)
+GET /api/budgets               → budget limits and % consumed</code></pre></div>
+<p><strong>What the user sees:</strong></p>
+<ul>
+<li>💳 Total spent this month card</li>
+<li>📊 Pie chart: category breakdown</li>
+<li>📈 Bar chart: daily spending trend</li>
+<li>🏦 Financial Health Score (0–100)</li>
+<li>💡 AI Insight cards ("You spent 25% more on food this week")</li>
+<li>⚠️ Budget warning banners if any category > 80%</li>
+</ul>
+<blockquote>All chart data comes from the backend which <strong>queries PostgreSQL</strong>, aggregates with SQL, and returns JSON.</blockquote>
+<hr>
+<h2>🔴 STEP 3 — Adding an Expense (4 Ways)</h2>
+<hr>
+<h3>WAY 1 — Manual Entry (Simplest)</h3>
+<div class="code-block"><pre><code>User clicks "+" button → fills form:
+  Amount: 350
+  Category: Food
+  Date: Today
+  Note: Dinner at Barbeque Nation
+→ clicks "Save"</code></pre></div>
+<p><strong>What happens:</strong></p>
+<ol>
+<li>React sends <code>POST /api/expenses</code> with the form data</li>
+<li>FastAPI validates with Pydantic (ensures amount > 0, date is valid, etc.)</li>
+<li>If category is left blank → <strong>AI auto-categorization kicks in</strong> (see Step 4)</li>
+<li>New row inserted into <code>expenses</code> table in PostgreSQL</li>
+<li>Response sent back → Dashboard <strong>re-fetches</strong> and updates charts</li>
+</ol>
+<hr>
+<h3>WAY 2 — OCR Receipt Scanner (Photo of Bill)</h3>
+<div class="code-block"><pre><code>User clicks "Scan Receipt" → takes photo of bill
+→ uploads image</code></pre></div>
+<p><strong>What happens step by step:</strong></p>
+<div class="mermaid-wrap"><pre class="mermaid">flowchart TD
+    A[User takes photo of bill] --> B[React sends image\nPOST /api/expenses/ocr]
+    B --> C[FastAPI receives image file]
+    C --> D[Image pre-processed\nOpenCV grayscale + threshold]
+    D --> E[Tesseract OCR runs\nextracts raw text]
+    E --> F{OCR text quality\ngood enough?}
+    F -->|Yes| G[Send text to Gemini API]
+    F -->|No| H[Return error: Image unclear\nAsk user to retake]
+    G --> I[Gemini extracts:\nAmount, Merchant, Date, Category]
+    I --> J[Return prefilled form to user]
+    J --> K[User confirms/edits data]
+    K --> L[POST /api/expenses → save to DB]
+    L --> M[Dashboard updates ✅]</pre></div>
+<p><strong>What Gemini does with OCR text:</strong></p>
+<div class="code-block"><pre><code>OCR raw text: "SWIGGY ORDER TOTAL Rs. 485 DATE 04-04-2026 ORDER#12345"
+
+Gemini prompt: "Extract: amount, merchant, date, category from this text"
+
+Gemini output: {
+  "amount": 485,
+  "merchant": "Swiggy",
+  "date": "2026-04-04",
+  "category": "Food &amp; Dining"
+}</code></pre></div>
+<p>User sees a prefilled form → confirms → saved ✅</p>
+<hr>
+<h3>WAY 3 — 🏦 Bank Statement Import <span style="display:inline-block;background:#6c63ff;color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;margin-left:8px;vertical-align:middle;">⚡ Advanced Feature</span></h3>
+
+<div style="background:linear-gradient(135deg,#f0eeff 0%,#e8f4ff 100%);border:2px solid #6c63ff;border-radius:14px;padding:20px 24px;margin:18px 0;">
+  <p style="margin:0 0 8px 0;font-weight:700;color:#2d2d5e;font-size:15px;">👆 What is this feature?</p>
+  <p style="margin:0;color:#444466;">Instead of adding expenses one-by-one, you can upload your entire <strong>bank/UPI statement</strong> and the app will automatically import all your transactions — categorized and ready in seconds.</p>
+  <p style="margin:10px 0 0 0;color:#5a52d5;font-weight:600;">📊 1 upload = 1 month of expenses added instantly</p>
+</div>
+
+<blockquote>💡 This is labeled as an <strong>"Import from Bank (Advanced)"</strong> option inside the app — it won't confuse regular users, but power users will love it!</blockquote>
+
+<hr style="border-top:1px dashed #c0bbff;margin:24px 0;">
+
+<h4>📥 STEP 1 — How to Download Your Bank Statement</h4>
+<p>Before uploading to the app, you need to download your statement from your bank or UPI app. Here's how:</p>
+
+<div style="display:grid;gap:16px;margin:20px 0;">
+
+  <!-- Google Pay -->
+  <div style="background:#fff;border:1.5px solid #e0ddff;border-radius:12px;padding:18px 20px;box-shadow:0 2px 10px rgba(108,99,255,0.07);">
+    <p style="font-weight:700;color:#2d2d5e;margin:0 0 10px 0;font-size:15px;">📱 Google Pay</p>
+    <ol style="margin:0 0 0 20px;padding:0;">
+      <li>Open the <strong>Google Pay</strong> app</li>
+      <li>Tap your profile photo (top right)</li>
+      <li>Go to <strong>Manage Google Pay account</strong></li>
+      <li>Tap <strong>Transaction history</strong></li>
+      <li>Tap <strong>Download statement</strong> → choose month</li>
+      <li>Select <strong>CSV format</strong> → Save to phone</li>
+    </ol>
+  </div>
+
+  <!-- PhonePe -->
+  <div style="background:#fff;border:1.5px solid #e0ddff;border-radius:12px;padding:18px 20px;box-shadow:0 2px 10px rgba(108,99,255,0.07);">
+    <p style="font-weight:700;color:#2d2d5e;margin:0 0 10px 0;font-size:15px;">📱 PhonePe</p>
+    <ol style="margin:0 0 0 20px;padding:0;">
+      <li>Open the <strong>PhonePe</strong> app</li>
+      <li>Tap <strong>History</strong> (bottom menu)</li>
+      <li>Tap the <strong>filter / download icon</strong> (top right)</li>
+      <li>Select date range (e.g., last 1 month)</li>
+      <li>Tap <strong>Download Statement</strong></li>
+      <li>Choose <strong>PDF or CSV</strong> → Save</li>
+    </ol>
+  </div>
+
+  <!-- Paytm -->
+  <div style="background:#fff;border:1.5px solid #e0ddff;border-radius:12px;padding:18px 20px;box-shadow:0 2px 10px rgba(108,99,255,0.07);">
+    <p style="font-weight:700;color:#2d2d5e;margin:0 0 10px 0;font-size:15px;">📱 Paytm</p>
+    <ol style="margin:0 0 0 20px;padding:0;">
+      <li>Open the <strong>Paytm</strong> app</li>
+      <li>Tap <strong>Passbook</strong> from the home screen</li>
+      <li>Tap <strong>Transactions</strong></li>
+      <li>Tap the <strong>↓ Download</strong> icon (top right)</li>
+      <li>Select month → tap <strong>Download PDF</strong></li>
+    </ol>
+  </div>
+
+  <!-- SBI YONO -->
+  <div style="background:#fff;border:1.5px solid #e0ddff;border-radius:12px;padding:18px 20px;box-shadow:0 2px 10px rgba(108,99,255,0.07);">
+    <p style="font-weight:700;color:#2d2d5e;margin:0 0 10px 0;font-size:15px;">🏦 SBI YONO / Internet Banking</p>
+    <ol style="margin:0 0 0 20px;padding:0;">
+      <li>Open <strong>YONO SBI app</strong> or go to <strong>onlinesbi.sbi</strong></li>
+      <li>Login → go to <strong>My Accounts</strong></li>
+      <li>Select your account → tap <strong>Account Statement</strong></li>
+      <li>Choose date range (From Date → To Date)</li>
+      <li>Click <strong>Download as CSV</strong> or <strong>PDF</strong></li>
+    </ol>
+  </div>
+
+  <!-- HDFC -->
+  <div style="background:#fff;border:1.5px solid #e0ddff;border-radius:12px;padding:18px 20px;box-shadow:0 2px 10px rgba(108,99,255,0.07);">
+    <p style="font-weight:700;color:#2d2d5e;margin:0 0 10px 0;font-size:15px;">🏦 HDFC Mobile Banking / NetBanking</p>
+    <ol style="margin:0 0 0 20px;padding:0;">
+      <li>Open <strong>HDFC Mobile Banking</strong> app or visit <strong>hdfcbank.com</strong></li>
+      <li>Login → tap <strong>Accounts</strong></li>
+      <li>Select account → tap <strong>View Statement</strong></li>
+      <li>Set date range → tap <strong>Download</strong></li>
+      <li>Select <strong>Excel / CSV format</strong> → Save</li>
+    </ol>
+  </div>
+
+</div>
+
+<hr style="border-top:1px dashed #c0bbff;margin:24px 0;">
+
+<h4>📤 STEP 2 — Upload to the App</h4>
+<div class="code-block"><pre><code>In the app → click "Import from Bank (Advanced)"
+→ drag &amp; drop your downloaded PDF or CSV file
+→ app automatically reads and imports all transactions</code></pre></div>
+
+<p><strong>What happens behind the scenes:</strong></p>
+<div class="mermaid-wrap"><pre class="mermaid">flowchart TD
+    A[User uploads PDF or CSV] --> B[POST /api/expenses/parse]
+    B --> C{File type?}
+    C -->|PDF| D[pdfplumber extracts\ntables from PDF pages]
+    C -->|CSV| E[pandas reads CSV\nheader detection]
+    D --> F[Raw transaction rows extracted]
+    E --> F
+    F --> G[Clean data:\nremove UPI ref numbers,\nparse date formats]
+    G --> H[For each transaction:\nsend to AI Categorizer]
+    H --> I[Gemini API classifies:\nFood, Travel, Bills, etc.]
+    I --> J[Bulk insert N rows\ninto expenses table]
+    J --> K[Return summary:\nX transactions imported ✅]
+    K --> L[Dashboard updates instantly]</pre></div>
+
+<p><strong>Example of what gets parsed:</strong></p>
+<div class="code-block"><pre><code>PDF row:    "05/04  UPI-ZOMATO-9823xx   DR   320.00"
+                          ↓  AI reads this
+AI output:  { category: "Food &amp; Dining", amount: ₹320, date: "05 Apr" }
+                          ↓  Auto saved
+Result:     Expense added to your dashboard ✅</code></pre></div>
+
+<blockquote>⚡ <strong>The wow moment:</strong> Upload 1 month's statement → 100+ transactions imported &amp; categorized in under 5 seconds. That's what impresses mentors and interviewers!</blockquote>
+<hr>
+<h3>WAY 4 — AI Chat Entry (Natural Language)</h3>
+<div class="code-block"><pre><code>User types: "spent 500 on Uber last night"
+         or "bought groceries for 1200 yesterday"</code></pre></div>
+<p><strong>What happens:</strong></p>
+<ol>
+<li><code>POST /api/chat</code> sends message to FastAPI</li>
+<li>FastAPI sends to <strong>Gemini API</strong> with a system prompt:</li>
+</ol>
+<div class="code-block"><pre><code>   You are an expense parser. Extract: amount, category, date, description.
+   User said: "spent 500 on Uber last night"
+   Today is 2026-04-05.
+   Return JSON only.</code></pre></div>
+<ol>
+<li>Gemini returns:</li>
+</ol>
+<div class="code-block"><span class="code-lang">json</span><pre><code>   { "amount": 500, "category": "Transport", "date": "2026-04-04", "description": "Uber ride" }</code></pre></div>
+<ol>
+<li>FastAPI auto-creates the expense entry</li>
+<li>Chat replies: "✅ Logged ₹500 for Transport on Apr 4"</li>
+</ol>
+<hr>
+<h2>🟣 STEP 4 — AI Auto-Categorization (Runs in background)</h2>
+<p>Every time an expense is added <strong>without a category</strong>, or imported from a statement:</p>
+<div class="mermaid-wrap"><pre class="mermaid">flowchart LR
+    A[Transaction description] --> B[NLP Categorizer]
+    B --> C{Method}
+    C -->|Keywords first| D[Rule engine:\nSwiggy→Food\nUber→Transport\nNetflix→Entertainment]
+    D -->|Matched| E[Use keyword category]
+    D -->|Not matched| F[Send to Gemini API]
+    F --> G[Gemini classifies\nwith confidence score]
+    G --> E
+    E --> H[Save category to DB]</pre></div>
+<p><strong>Categories recognized:</strong></p>
+<p><code>Food & Dining | Transport | Shopping | Entertainment | Bills & Utilities | Healthcare | Education | Travel | Investments | Other</code></p>
+<hr>
+<h2>🟠 STEP 5 — AI Insights Engine</h2>
+<p>Every night at <strong>midnight</strong> (Celery scheduled task):</p>
+<div class="mermaid-wrap"><pre class="mermaid">flowchart TD
+    A[Celery Scheduler\ntriggers nightly] --> B[Fetch last 30 days expenses\nfor each user]
+    B --> C[Run 4 analysis modules]
+    C --> D[Module 1: Spending Patterns\nweekday vs weekend, morning vs night]
+    C --> E[Module 2: Category Trends\ncompare to last month %]
+    C --> F[Module 3: Anomaly Detection\nIsolation Forest on amounts]
+    C --> G[Module 4: Prediction\nProphet forecasts next month]
+    D --> H[Generate natural language insights\nvia Gemini API]
+    E --> H
+    F --> H
+    G --> H
+    H --> I[Store in insights table]
+    I --> J[Send push notification\nvia Firebase FCM]
+    J --> K[User sees insight card\non next Dashboard visit]</pre></div>
+<p><strong>Example Insights generated:</strong></p>
+<ul>
+<li>💡 "Your Food spending is ₹3,200 this month — 28% higher than last month"</li>
+<li>⚠️ "Unusual transaction: ₹12,000 at Amazon on Apr 3 — is this correct?"</li>
+<li>🔮 "Based on your pattern, you'll spend ~₹18,500 next month"</li>
+<li>💰 "You could save ₹1,800/month by reducing Swiggy orders by 30%"</li>
+</ul>
+<hr>
+<h2>🔵 STEP 6 — Financial Health Score</h2>
+<div class="code-block"><pre><code>GET /api/insights/health  →  returns score 0–100</code></pre></div>
+<p><strong>How the score is calculated:</strong></p>
+<div class="mermaid-wrap"><pre class="mermaid">flowchart TD
+    A[Financial Health Score] --> B[3 Components]
+    B --> C["Savings Ratio 40pts\nIncome - Expenses / Income\n>30% = 40pts\n>10% = 20pts\n<10% = 5pts"]
+    B --> D["Budget Adherence 35pts\nHow many categories within limit\n100% within = 35pts\n80% = 25pts\n<50% = 10pts"]
+    B --> E["Spending Stability 25pts\nStd deviation of daily spending\nLow variance = 25pts\nHigh variance = 5pts"]
+    C --> F[Total Score / 100]
+    D --> F
+    E --> F
+    F --> G[Score 80-100: Excellent 🟢]
+    F --> H[Score 60-79: Good 🟡]
+    F --> I[Score 40-59: Fair 🟠]
+    F --> J[Score below 40: Needs Work 🔴]</pre></div>
+<hr>
+<h2>🟤 STEP 7 — Budget Alerts</h2>
+<div class="code-block"><pre><code>User sets budget: Food = ₹5,000/month</code></pre></div>
+<p><strong>What happens when budget is nearing:</strong></p>
+<ol>
+<li>Every time a new expense is saved → Celery task checks budget</li>
+<li><code>SUM(expenses WHERE category='Food' AND month=current)</code> vs limit</li>
+<li>If > 80% → send <strong>push notification</strong> via Firebase FCM</li>
+<li>If > 100% → send <strong>"LIMIT EXCEEDED"</strong> alert</li>
+<li>Alert stored in DB so it's not sent twice (<code>alert_sent = true</code>)</li>
+</ol>
+<hr>
+<h2>⚪ STEP 8 — AI Chat Assistant</h2>
+<div class="code-block"><pre><code>User types: "How much did I spend on food last month?"
+         or "Where can I save money?"
+         or "Show me my top 5 expenses this week"</code></pre></div>
+<p><strong>What happens (RAG — Retrieval Augmented Generation):</strong></p>
+<div class="mermaid-wrap"><pre class="mermaid">sequenceDiagram
+    participant U as User
+    participant R as React Chat UI
+    participant F as FastAPI
+    participant DB as PostgreSQL
+    participant G as Gemini API
+
+    U->>R: "How much on food last month?"
+    R->>F: POST /api/chat {message}
+    F->>DB: Query: SELECT SUM(amount) WHERE category='Food'\nAND month=March
+    DB->>F: ₹6,840
+    F->>G: "User spent ₹6840 on food in March.\nAnswer: How much did I spend on food last month?"
+    G->>F: "You spent ₹6,840 on Food in March. That's your highest category!"
+    F->>R: Response text
+    R->>U: "You spent ₹6,840 on Food in March 🍕"</pre></div>
+<blockquote>The AI doesn't guess — it <strong>first queries your real data from DB</strong>, then asks Gemini to phrase the answer naturally. This is called <strong>RAG (Retrieval Augmented Generation)</strong>.</blockquote>
+<hr>
+<hr>
+<h1>PART 2 — DEPLOYMENT: Step by Step</h1>
+<hr>
+<h2>🚀 FULL DEPLOYMENT PIPELINE</h2>
+<div class="mermaid-wrap"><pre class="mermaid">flowchart TD
+    A[Your Laptop\nCode] --> B[GitHub Repository]
+    B --> C{GitHub Actions CI/CD}
+    C --> D[Run Tests]
+    D -->|Pass| E[Deploy Backend\nto Render.com]
+    D -->|Pass| F[Deploy Frontend\nto Vercel]
+    E --> G[Live API:\napi.yourapp.com]
+    F --> H[Live Web App:\nyourapp.vercel.app]
+    G --> I[Supabase PostgreSQL]
+    G --> J[Upstash Redis]
+    G --> K[Cloudinary Images]
+    G --> L[Firebase FCM\nPush Notifications]
+    H --> G
+    B --> M[Expo EAS Build]
+    M --> N[Android APK\nyourapp.apk]
+    N --> O[Google Play Store\nOR direct APK download]</pre></div>
+<hr>
+<h2>📦 STEP-BY-STEP DEPLOYMENT GUIDE</h2>
+<hr>
+<h3>DEPLOY STEP 1 — Set Up GitHub Repository</h3>
+<div class="code-block"><span class="code-lang">bash</span><pre><code># On your laptop
+git init
+git add .
+git commit -m "Initial commit: Smart Expense Tracker"
+git remote add origin https://github.com/yourusername/smart-expense-tracker.git
+git push -u origin main</code></pre></div>
+<ul>
+<li>Create repo at <strong>github.com</strong></li>
+<li>Keep it <strong>public</strong> (for portfolio visibility)</li>
+<li>Add a good README with screenshots</li>
+</ul>
+<hr>
+<h3>DEPLOY STEP 2 — Set Up Supabase (Free PostgreSQL)</h3>
+<ol>
+<li>Go to <strong>supabase.com</strong> → Create free account</li>
+<li>Click "New Project" → name it <code>smart-expense-tracker</code></li>
+<li>Choose region: <strong>Asia (Singapore)</strong> — closest to India</li>
+<li>Copy the <strong>Connection String</strong> from Settings → Database</li>
+</ol>
+<div class="code-block"><pre><code>postgresql://postgres:[password]@db.xxxx.supabase.co:5432/postgres</code></pre></div>
+<ol>
+<li>Run Alembic migrations to create tables:</li>
+</ol>
+<div class="code-block"><span class="code-lang">bash</span><pre><code>cd backend
+alembic upgrade head  # creates all tables in Supabase</code></pre></div>
+<ol>
+<li>Your database is now <strong>live</strong> ✅</li>
+</ol>
+<hr>
+<h3>DEPLOY STEP 3 — Deploy Backend to Render.com</h3>
+<div class="mermaid-wrap"><pre class="mermaid">flowchart LR
+    A[render.com] --> B[New Web Service]
+    B --> C[Connect GitHub repo]
+    C --> D[Select backend/ folder]
+    D --> E[Configure:]
+    E --> F["Build: pip install -r requirements.txt\nStart: uvicorn main:app --host 0.0.0.0 --port $PORT"]
+    F --> G[Set Environment Variables]
+    G --> H[Deploy ✅]</pre></div>
+<p><strong>Environment variables to set in Render:</strong></p>
+<div class="code-block"><span class="code-lang">env</span><pre><code>DATABASE_URL=postgresql://postgres:xxx@db.supabase.co/postgres
+SECRET_KEY=your-super-secret-jwt-key-here
+GEMINI_API_KEY=AIza...your-key
+GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=xxxxx
+REDIS_URL=redis://default:xxx@upstash.io:6379
+CLOUDINARY_URL=cloudinary://xxx:xxx@yourcloud
+FIREBASE_KEY=path/to/firebase-key.json</code></pre></div>
+<p><strong>After deploy:</strong></p>
+<ul>
+<li>Render gives you a URL: <code>https://smart-expense-api.onrender.com</code></li>
+<li>Test it: <code>https://smart-expense-api.onrender.com/docs</code> → FastAPI Swagger UI</li>
+</ul>
+<hr>
+<h3>DEPLOY STEP 4 — Set Up Redis (Upstash — Free)</h3>
+<ol>
+<li>Go to <strong>upstash.com</strong> → Create account</li>
+<li>"Create Database" → name it <code>expense-cache</code></li>
+<li>Select region: <strong>AWS ap-south-1</strong> (Mumbai)</li>
+<li>Copy <strong>REDIS_URL</strong> → paste in Render environment variables</li>
+</ol>
+<blockquote>Used for: caching dashboard queries, rate limiting, Celery task queue</blockquote>
+<hr>
+<h3>DEPLOY STEP 5 — Set Up Cloudinary (Image Storage)</h3>
+<ol>
+<li>Go to <strong>cloudinary.com</strong> → Free account</li>
+<li>Copy your <strong>Cloud Name, API Key, API Secret</strong></li>
+<li>Set <code>CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name</code> in Render</li>
+</ol>
+<blockquote>Used for: storing uploaded receipt images (25 GB free)</blockquote>
+<hr>
+<h3>DEPLOY STEP 6 — Deploy Frontend to Vercel</h3>
+<div class="mermaid-wrap"><pre class="mermaid">flowchart LR
+    A[vercel.com] --> B[Import GitHub Repo]
+    B --> C[Select frontend/ folder]
+    C --> D[Framework: Vite]
+    D --> E[Set env variable:\nVITE_API_URL=https://smart-expense-api.onrender.com]
+    E --> F[Deploy ✅]
+    F --> G[Live at yourapp.vercel.app]</pre></div>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Go to <strong>vercel.com</strong> → Login with GitHub</li>
+<li>"Import Project" → select your repo → set <strong>Root Directory</strong> to <code>frontend</code></li>
+<li>Add environment variable: <code>VITE_API_URL = https://smart-expense-api.onrender.com</code></li>
+<li>Click Deploy → Vercel builds and deploys automatically</li>
+<li>Every <code>git push</code> to <code>main</code> → <strong>auto-redeploys</strong> ✅</li>
+</ol>
+<p><strong>Custom domain (optional):</strong></p>
+<ul>
+<li>Vercel Settings → Domains → Add <code>expensetracker.yourdomain.com</code></li>
+<li>Or use the free <code>.vercel.app</code> domain for portfolio</li>
+</ul>
+<hr>
+<h3>DEPLOY STEP 7 — Make it a PWA (Installable on Android)</h3>
+<p>Add these files to the React frontend:</p>
+<p><strong><code>public/manifest.json</code>:</strong></p>
+<div class="code-block"><span class="code-lang">json</span><pre><code>{
+  "name": "Smart Expense Tracker",
+  "short_name": "ExpenseAI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#6c63ff",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}</code></pre></div>
+<p><strong><code>public/sw.js</code> (Service Worker for offline):</strong></p>
+<div class="code-block"><span class="code-lang">javascript</span><pre><code>// Caches dashboard for offline viewing
+self.addEventListener('install', (e) =&gt; {
+  e.waitUntil(
+    caches.open('expense-v1').then(cache =&gt; 
+      cache.addAll(['/', '/index.html', '/assets/main.js'])
+    )
+  );
+});</code></pre></div>
+<p><strong>How user installs on Android:</strong></p>
+<ol>
+<li>Open <strong>yourapp.vercel.app</strong> in Chrome on Android</li>
+<li>Chrome shows <strong>"Add to Home Screen"</strong> banner automatically</li>
+<li>Tap it → app icon appears on home screen</li>
+<li>Opens full-screen like a native app — <strong>no Play Store needed!</strong></li>
+</ol>
+<hr>
+<h3>DEPLOY STEP 8 — Build Android APK (React Native / Expo)</h3>
+<div class="mermaid-wrap"><pre class="mermaid">flowchart TD
+    A[mobile/ Expo project] --> B[expo login]
+    B --> C[eas build --platform android --profile preview]
+    C --> D[Expo cloud builds your APK\ntakes ~10 minutes - FREE]
+    D --> E[Download link generated]
+    E --> F[Share link via WhatsApp\nEmail, or Portfolio]
+    F --> G[Users tap link → Install APK\non Android phone]</pre></div>
+<p><strong>Commands:</strong></p>
+<div class="code-block"><span class="code-lang">bash</span><pre><code>cd mobile
+npm install -g eas-cli
+eas login
+eas build:configure
+
+# Build APK for direct install (completely free)
+eas build --platform android --profile preview</code></pre></div>
+<p><strong>After build (~10 min):</strong></p>
+<ul>
+<li>Expo gives you a <strong>direct download link</strong> for the <code>.apk</code> file</li>
+<li>Share it on WhatsApp, email, LinkedIn, or your portfolio/resume</li>
+<li>Anyone taps the link → clicks Install → app is on their phone ✅</li>
+<li>No Play Store. No $25 fee. No approval wait.</li>
+</ul>
+<hr>
+<h3>DEPLOY STEP 9 — Firebase Push Notifications</h3>
+<ol>
+<li>Go to <strong>console.firebase.google.com</strong></li>
+<li>Create project → Add Android App → download <code>google-services.json</code></li>
+<li>Place in <code>mobile/android/app/</code></li>
+<li>In backend, download the <strong>service account key JSON</strong></li>
+<li>Set <code>FIREBASE_KEY</code> in Render environment</li>
+</ol>
+<p><strong>How notifications are sent:</strong></p>
+<div class="code-block"><span class="code-lang">python</span><pre><code># backend/services/notification.py
+import firebase_admin
+from firebase_admin import messaging
+
+def send_budget_alert(user_fcm_token, category, percentage):
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title="⚠️ Budget Alert",
+            body=f"You've used {percentage}% of your {category} budget!"
+        ),
+        token=user_fcm_token
+    )
+    messaging.send(message)</code></pre></div>
+<hr>
+<h3>DEPLOY STEP 10 — GitHub Actions CI/CD (Auto Deploy)</h3>
+<p>Create <code>.github/workflows/deploy.yml</code>:</p>
+<div class="code-block"><span class="code-lang">yaml</span><pre><code>name: Deploy Smart Expense Tracker
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with: { python-version: '3.11' }
+      - name: Install &amp; Test
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pytest tests/ -v
+
+  deploy-backend:
+    needs: test-backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Render
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+  deploy-frontend:
+    needs: test-backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.ORG_ID }}
+          vercel-project-id: ${{ secrets.PROJECT_ID }}</code></pre></div>
+<p><strong>What this does:</strong></p>
+<ul>
+<li>Every time you <code>git push</code> to <code>main</code> branch:</li>
+</ul>
+<p>  1. ✅ Run all backend tests</p>
+<p>  2. If pass → auto-deploy backend to Render</p>
+<p>  3. If pass → auto-deploy frontend to Vercel</p>
+<ul>
+<li>Zero manual deployment needed after setup ✅</li>
+</ul>
+<hr>
+<h2>✅ Final Deployment Checklist</h2>
+<table><tbody>
+<tr><td>Item</td><td>Service</td><td>Cost</td><td>Status</td></tr>
+<tr><td>PostgreSQL Database</td><td>Supabase</td><td>Free</td><td>Configure</td></tr>
+<tr><td>Redis Cache</td><td>Upstash</td><td>Free</td><td>Configure</td></tr>
+<tr><td>Image Storage</td><td>Cloudinary</td><td>Free</td><td>Configure</td></tr>
+<tr><td>Backend API</td><td>Render.com</td><td>Free</td><td>Deploy</td></tr>
+<tr><td>Web App</td><td>Vercel</td><td>Free</td><td>Deploy</td></tr>
+<tr><td>PWA (Android install)</td><td>Built into React</td><td>Free</td><td>Add manifest</td></tr>
+<tr><td>Push Notifications</td><td>Firebase</td><td>Free</td><td>Configure</td></tr>
+<tr><td>Android APK (direct share)</td><td>Expo EAS Build</td><td>Free</td><td>Build & share</td></tr>
+<tr><td>Custom Domain</td><td>Vercel subdomain</td><td>Free</td><td>Optional</td></tr>
+<tr><td>CI/CD Pipeline</td><td>GitHub Actions</td><td>Free</td><td>Configure</td></tr>
+<tr><td><strong>TOTAL COST</strong></td><td></td><td><strong>₹0</strong></td><td>✅</td></tr>
+</tbody></table>
+<hr>
+<h2>🌐 What Your URLs Look Like After Deployment</h2>
+<div class="code-block"><pre><code>Web App (PWA):      https://smart-expense-tracker.vercel.app
+Backend API:        https://smart-expense-api.onrender.com
+API Docs (Swagger): https://smart-expense-api.onrender.com/docs
+Android APK Link:   https://expo.dev/artifacts/eas/xxx.apk  ← share this directly</code></pre></div>
+<blockquote>💡 <strong>PWA tip</strong>: Users can also install directly from Chrome on Android without any APK — just open the web URL and tap <em>"Add to Home Screen"</em>. This is your zero-friction mobile option.</blockquote>
+<hr>
+<h2>📊 Complete Flow Summary in One Diagram</h2>
+<div class="mermaid-wrap"><pre class="mermaid">sequenceDiagram
+    participant U as 📱 User (Phone/Web)
+    participant V as Vercel (React)
+    participant R as Render (FastAPI)
+    participant DB as Supabase (PostgreSQL)
+    participant AI as Gemini API
+    participant FCM as Firebase (Notifications)
+    participant S3 as Cloudinary
+
+    U->>V: Opens app / PWA
+    V->>R: Login request
+    R->>DB: Verify user
+    DB->>R: User data
+    R->>V: JWT Token
+    V->>U: Dashboard loads
+
+    U->>V: Upload receipt photo
+    V->>R: POST /api/expenses/ocr
+    R->>S3: Store image
+    R->>AI: OCR text → extract data
+    AI->>R: {amount, category, date}
+    R->>DB: Save expense
+    R->>V: Success + data
+    V->>U: Dashboard updated ✅
+
+    Note over R,FCM: Nightly Celery job
+    R->>DB: Fetch all expenses
+    R->>AI: Generate insights
+    AI->>R: Insight text
+    R->>DB: Save insights
+    R->>FCM: Send push notification
+    FCM->>U: 📲 "You spent 25% more on food"</pre></div>
+<hr>
+<blockquote>🎯 <strong>You now have a complete mental model</strong> of every user interaction AND every deployment step. When you start building, refer back to this document for each phase.</blockquote>
+</body>
+</html>

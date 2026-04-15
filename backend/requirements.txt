@@ -1,0 +1,38 @@
+# ── Core FastAPI ───────────────────
+fastapi==0.110.1
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# ── Database ───────────────────────
+sqlalchemy==2.0.29
+# Uncomment for PostgreSQL production:
+# psycopg2-binary==2.9.9
+# asyncpg==0.29.0
+
+# ── Auth & Security ────────────────
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+
+# ── Validation ─────────────────────
+pydantic==2.7.1
+pydantic-settings==2.2.1
+email-validator==2.1.1
+
+# ── File Parsing ───────────────────
+pandas==2.2.2
+pdfplumber==0.11.0
+openpyxl==3.1.2       # Excel support for pandas
+
+# ── OCR (optional - requires Tesseract installed) ──
+# pytesseract==0.3.10
+# Pillow==10.3.0
+# opencv-python-headless==4.9.0.80
+
+# ── AI (optional) ─────────────────
+google-generativeai>=0.5.4   # Gemini AI for NLP categorization
+
+# ── Utils ──────────────────────────
+python-dotenv==1.0.1
+httpx==0.27.0
+aiofiles==23.2.1
