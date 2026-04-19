@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
     GEMINI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
+    LLM_PROVIDER: str = "groq" # "groq" or "gemini"
     FRONTEND_URL: str = "http://localhost:5173"
 
     class Config:

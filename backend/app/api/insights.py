@@ -81,6 +81,29 @@ def get_health_score(
     else:
         grade, label = "D", "Needs Work 🔴"
 
+    # 50/30/20 Rule Logic
+    rule_data = {"needs": 0, "wants": 0, "savings": 0}
+    needs_cats = ["Bills & Utilities", "Healthcare", "Education", "Transport"]
+    wants_cats = ["Food & Dining", "Shopping", "Entertainment", "Travel", "Other"]
+    savings_cats = ["Investments"]
+
+    for e in expenses:
+        if e.category in needs_cats:
+            rule_data["needs"] += e.amount
+        elif e.category in wants_cats:
+            rule_data["wants"] += e.amount
+        elif e.category in savings_cats:
+            rule_data["savings"] += e.amount
+
+    income = current_user.monthly_income or 50000
+    rule_data["savings"] += max(0, income - total_spent) # Assume remaining is saved
+
+    rule_percents = {
+        "needs": round((rule_data["needs"] / income) * 100, 1),
+        "wants": round((rule_data["wants"] / income) * 100, 1),
+        "savings": round((rule_data["savings"] / income) * 100, 1),
+    }
+
     return {
         "score": total_score,
         "grade": grade,
@@ -90,8 +113,10 @@ def get_health_score(
             "budget_adherence": budget_score,
             "stability": stability_score,
         },
+        "rule_50_30_20": rule_percents,
         "total_spent_this_month": round(total_spent, 2),
         "transaction_count": len(expenses),
+        "monthly_income": income
     }
 
 

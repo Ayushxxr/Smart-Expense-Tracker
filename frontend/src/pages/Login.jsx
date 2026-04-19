@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
+import { Wallet, Eye, EyeOff } from 'lucide-react'
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
@@ -21,7 +22,7 @@ export default function Login() {
     try {
       const { data } = await api.post('/api/auth/login', form)
       setAuth(data.user, data.access_token)
-      toast.success(`Welcome back, ${data.user.name}! 🎉`)
+      toast.success(`Welcome back, ${data.user.name}!`)
       navigate('/dashboard')
     } catch (err) {
       const detail = err.response?.data?.detail
@@ -41,7 +42,7 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo">
-          <div className="auth-logo-icon">💰</div>
+          <div className="auth-logo-icon"><Wallet size={24} color="#fff" /></div>
           <h1 className="auth-title">ExpenseAI</h1>
           <p className="auth-sub">Smart expense tracking with AI</p>
         </div>
@@ -84,7 +85,7 @@ export default function Login() {
                   color: 'var(--text3)', fontSize: 18, cursor: 'pointer'
                 }}
               >
-                {showPass ? '🙈' : '👁️'}
+                {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
@@ -95,7 +96,7 @@ export default function Login() {
             style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
             disabled={loading}
           >
-            {loading ? <span className="spinner" /> : '🚀 Sign In'}
+            {loading ? <span className="spinner" /> : 'Sign In'}
           </button>
         </form>
 
@@ -105,7 +106,7 @@ export default function Login() {
           className="btn btn-secondary"
           style={{ width: '100%', justifyContent: 'center' }}
         >
-          🎭 Use Demo Account
+          Use Demo Account
         </button>
 
         <p className="auth-footer">

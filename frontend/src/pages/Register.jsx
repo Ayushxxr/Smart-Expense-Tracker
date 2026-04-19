@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
+import { Wallet } from 'lucide-react'
 
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', monthly_income: '' })
@@ -20,7 +21,7 @@ export default function Register() {
       }
       const { data } = await api.post('/api/auth/register', payload)
       setAuth(data.user, data.access_token)
-      toast.success(`Welcome, ${data.user.name}! 🎉`)
+      toast.success(`Welcome, ${data.user.name}!`)
       navigate('/dashboard')
     } catch (err) {
       const detail = err.response?.data?.detail
@@ -40,7 +41,7 @@ export default function Register() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo">
-          <div className="auth-logo-icon">🚀</div>
+          <div className="auth-logo-icon"><Wallet size={24} color="#fff" /></div>
           <h1 className="auth-title">Create Account</h1>
           <p className="auth-sub">Start tracking smarter today</p>
         </div>
@@ -106,7 +107,7 @@ export default function Register() {
             style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
             disabled={loading}
           >
-            {loading ? <span className="spinner" /> : '✨ Create Account'}
+            {loading ? <span className="spinner" /> : 'Create Account'}
           </button>
         </form>
 

@@ -5,6 +5,7 @@ import api from '../api/client'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
+import { User, Mail, Wallet, Download, LogOut, ShieldCheck, Heart } from 'lucide-react'
 
 export default function Profile() {
   const { user, setAuth, logout } = useAuthStore()
@@ -25,20 +26,20 @@ export default function Profile() {
     mutationFn: (data) => api.put('/api/auth/me', data),
     onSuccess: ({ data }) => {
       setAuth(data.user, data.access_token || localStorage.getItem('access_token'))
-      toast.success('Profile updated ✅')
+      toast.success('Profile updated')
     },
     onError: err => toast.error(err.response?.data?.detail || 'Update failed')
   })
 
   const handleLogout = () => {
     logout()
-    toast.success('Logged out 👋')
+    toast.success('Logged out successfully')
     navigate('/login')
   }
 
   const handleExport = async () => {
     try {
-      toast('Preparing export...', { icon: '⏳' })
+      toast('Preparing export...', { icon: <Download size={16} color="var(--accent)" /> })
       const response = await api.get('/api/expenses/export', { responseType: 'blob' })
       const url = URL.createObjectURL(new Blob([response.data], { type: 'text/csv' }))
       const a = document.createElement('a')
@@ -46,7 +47,7 @@ export default function Profile() {
       a.download = `expenses_${format(new Date(), 'yyyy-MM-dd')}.csv`
       a.click()
       URL.revokeObjectURL(url)
-      toast.success('Export downloaded! ✅')
+      toast.success('Export downloaded!')
     } catch {
       toast.error('Export failed')
     }
@@ -60,7 +61,7 @@ export default function Profile() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">👤 Profile</h1>
+          <h1 className="page-title">Profile</h1>
           <p className="page-sub">Manage your account</p>
         </div>
       </div>
@@ -77,10 +78,9 @@ export default function Profile() {
             <div className="card" style={{ textAlign: 'center', padding: '32px 24px' }}>
               <div style={{
                 width: 80, height: 80, borderRadius: '50%', margin: '0 auto 16px',
-                background: 'linear-gradient(135deg, var(--accent), var(--accent2))',
+                background: 'var(--accent)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 32, fontWeight: 800, color: '#fff',
-                boxShadow: '0 0 30px rgba(108,99,255,0.5)'
+                fontSize: 32, fontWeight: 800, color: '#fff'
               }}>
                 {user?.name?.[0]?.toUpperCase() || '?'}
               </div>

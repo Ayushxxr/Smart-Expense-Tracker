@@ -52,6 +52,31 @@ def get_summary(
         ).scalar() or 0
         change_pct = round(((total_spent - prev_expenses) / prev_expenses * 100) if prev_expenses > 0 else 0, 1)
 
+    # Calculate days for burn-rate (only if month is current or not "all")
+    today_obj = date.today()
+    days_remaining = 0
+    suggested_daily = 0
+    
+    if month != "all":
+        import calendar
+        if month:
+            y, m = map(int, month.split("-"))
+        else:
+            y, m = today_obj.year, today_obj.month
+            
+        _, num_days = calendar.monthrange(y, m)
+        
+        if y == today_obj.year and m == today_obj.month:
+            days_remaining = num_days - today_obj.day + 1
+        elif (y > today_obj.year) or (y == today_obj.year and m > today_obj.month):
+            days_remaining = num_days
+        else:
+            days_remaining = 0 # past month
+            
+        if days_remaining > 0:
+            remaining_balance = current_user.monthly_income - total_spent
+            suggested_daily = round(max(0, remaining_balance / days_remaining), 2)
+
     return {
         "month": month or "current",
         "total_spent": round(total_spent, 2),
@@ -60,6 +85,9 @@ def get_summary(
         "change_percentage": change_pct,
         "by_category": dict(by_category),
         "top_category": max(by_category, key=by_category.get) if by_category else None,
+        "monthly_income": current_user.monthly_income,
+        "suggested_daily_limit": suggested_daily,
+        "days_remaining": days_remaining
     }
 
 

@@ -1,205 +1,286 @@
 import { useQuery } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
+import { 
+  AlertTriangle, CheckCircle2, Info, Sparkles, TrendingUp, 
+  Target, AlertOctagon, ShieldCheck, Zap, ArrowRight,
+  PieChart, Activity, Wallet
+} from 'lucide-react'
 import api from '../api/client'
 
-function ScoreRing({ score }) {
-  const radius = 54
+const TIP_ICONS = { warning: AlertTriangle, success: CheckCircle2, info: Info }
+const TIP_COLORS = { 
+  warning: '#f97316', 
+  success: '#10b981', 
+  info: '#6366f1' 
+}
+
+function ProgressRing({ value, size = 160, stroke = 12, color = 'var(--accent)' }) {
+  const radius = (size - stroke) / 2
   const circ = 2 * Math.PI * radius
-  const dash = (score / 100) * circ
-  const color = score >= 80 ? '#4ade80' : score >= 60 ? '#facc15' : score >= 40 ? '#fb923c' : '#f87171'
+  const offset = circ - (value / 100) * circ
 
   return (
-    <div style={{ position: 'relative', width: 140, height: 140, margin: '0 auto 24px' }}>
-      <svg width="140" height="140" style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx="70" cy="70" r={radius} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="14" />
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: size, height: size, margin: '0 auto' }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle
-          cx="70" cy="70" r={radius} fill="none"
-          stroke={color} strokeWidth="14"
-          strokeDasharray={`${dash} ${circ - dash}`}
+          cx={size / 2} cy={size / 2} r={radius}
+          stroke="rgba(255,255,255,0.03)"
+          strokeWidth={stroke}
+          fill="transparent"
+        />
+        <circle
+          cx={size / 2} cy={size / 2} r={radius}
+          stroke={color}
+          strokeWidth={stroke}
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
           strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 8px ${color})`, transition: 'stroke-dasharray 1.5s ease' }}
+          fill="transparent"
+          style={{ 
+            transition: 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
+            filter: `drop-shadow(0 0 8px ${color}60)` 
+          }}
         />
       </svg>
-      <div style={{
-        position: 'absolute', inset: 0,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
-      }}>
-        <div style={{ fontSize: 36, fontWeight: 800, color, letterSpacing: -1 }}>{score}</div>
-        <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1 }}>Score</div>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: size * 0.25, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--font-title)' }}>
+          {Math.round(value)}%
+        </span>
+        <span style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 800 }}>Score</span>
       </div>
     </div>
   )
 }
 
-const TIP_ICONS = { warning: '⚠️', success: '✅', info: '💡' }
-const TIP_COLORS = { warning: 'var(--yellow)', success: 'var(--green)', info: 'var(--accent)' }
+function MetricPod({ label, value, max, color }) {
+  const pct = Math.min((value / max) * 100, 100)
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 6, letterSpacing: 0.5 }}>
+        <span>{label}</span>
+        <span style={{ color: 'var(--text2)' }}>{Math.round(pct)}%</span>
+      </div>
+      <div style={{ height: 6, background: 'rgba(255,255,255,0.03)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ 
+          height: '100%', width: `${pct}%`, background: color, 
+          borderRadius: 10, transition: 'width 1s ease-out',
+          boxShadow: `0 0 10px ${color}40`
+        }} />
+      </div>
+    </div>
+  )
+}
 
 export default function Insights() {
-  const { data: health, isLoading: h1 } = useQuery({
+  const { data: health, isLoading: loadingHealth } = useQuery({
     queryKey: ['health'],
     queryFn: () => api.get('/api/insights/health').then(r => r.data),
   })
-  const { data: tipsData, isLoading: h2 } = useQuery({
+  const { data: tipsData, isLoading: loadingTips } = useQuery({
     queryKey: ['tips'],
     queryFn: () => api.get('/api/insights/tips').then(r => r.data),
   })
-  const { data: anomalyData, isLoading: h3 } = useQuery({
+  const { data: anomalyData } = useQuery({
     queryKey: ['anomalies'],
     queryFn: () => api.get('/api/insights/anomalies').then(r => r.data),
   })
 
   const tips = tipsData?.tips || []
   const anomalies = anomalyData?.anomalies || []
+  const rule = health?.rule_50_30_20 || { needs: 0, wants: 0, savings: 0 }
 
   return (
-    <div>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">✨ AI Insights</h1>
-          <p className="page-sub">Smart analysis of your finances</p>
+    <div style={{ paddingBottom: 40 }}>
+      {/* Header */}
+      <div className="page-header" style={{ marginBottom: 32 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h1 className="page-title">Elite Insights</h1>
+          <p className="page-sub">Next-gen financial intelligence & analytics</p>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ 
+            background: 'rgba(132, 101, 255, 0.1)', padding: '8px 16px', borderRadius: 12, 
+            display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(132, 101, 255, 0.2)' 
+          }}>
+            <Zap size={16} color="var(--accent)" />
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>AI Active</span>
+          </div>
         </div>
       </div>
 
-      <div className="page-body">
-        <div style={{ display: 'grid', gridTemplateColumns: 'clamp(260px, 33%, 320px) 1fr', gap: 24, marginBottom: 24, alignItems: 'start' }} className="insights-grid">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'start' }}>
+        {/* Left Column: Health Cockpit */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div className="card stagger-item" style={{ 
+            padding: 32, borderRadius: 28, 
+            background: 'linear-gradient(180deg, rgba(30, 30, 46, 0.4) 0%, rgba(20, 20, 31, 0.4) 100%)',
+            border: '1px solid var(--border2)', position: 'relative', overflow: 'hidden'
+          }}>
+            {/* Background Glow */}
+            <div style={{ 
+              position: 'absolute', top: '-20%', left: '-20%', width: '100%', height: '100%',
+              background: 'radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%)',
+              pointerEvents: 'none'
+            }} />
 
-          {/* Health Score */}
-          <div className="card" style={{ textAlign: 'center', padding: '28px 24px' }}>
-            <div className="card-title">🏆 Financial Health</div>
-            {h1 ? (
-              <div style={{ padding: 40, color: 'var(--text3)' }}>
-                <span className="spinner" style={{ margin: '0 auto 12px' }} />
-                <div>Analyzing...</div>
-              </div>
-            ) : (
-              <>
-                <ScoreRing score={health?.score || 0} />
-                <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4, color: 'var(--text)' }}>
-                  {health?.label}
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20 }}>
-                  Grade: <strong style={{ color: 'var(--accent)' }}>{health?.grade}</strong>
-                </div>
-
-                {/* Score breakdown */}
-                <div style={{ textAlign: 'left', background: 'var(--bg3)', borderRadius: 12, padding: 16 }}>
-                  {[
-                    { label: 'Savings Rate', key: 'savings', max: 40 },
-                    { label: 'Budget Adherence', key: 'budget_adherence', max: 35 },
-                    { label: 'Spending Stability', key: 'stability', max: 25 },
-                  ].map(({ label, key, max }) => {
-                    const val = health?.breakdown?.[key] || 0
-                    const pct = (val / max) * 100
-                    return (
-                      <div key={key} style={{ marginBottom: 12 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>
-                          <span>{label}</span>
-                          <span>{val}/{max}</span>
-                        </div>
-                        <div className="budget-bar-bg" style={{ height: 6 }}>
-                          <div
-                            className="budget-bar-fill ok"
-                            style={{ width: `${pct}%`, background: pct > 80 ? '#4ade80' : pct > 50 ? 'var(--accent)' : 'var(--yellow)' }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                <div style={{ marginTop: 16, padding: 14, background: 'var(--bg3)', borderRadius: 12, textAlign: 'left' }}>
-                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>This Month</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>
-                    ₹{(health?.total_spent_this_month || 0).toLocaleString('en-IN')}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>{health?.transaction_count || 0} transactions</div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Tips */}
-          <div>
-            <div className="card" style={{ marginBottom: 24 }}>
-              <div className="card-title">💡 AI Spending Tips</div>
-              {h2 ? (
-                <div style={{ color: 'var(--text3)', padding: '40px 0', textAlign: 'center' }}>
-                   <span className="spinner" style={{ margin: '0 auto 12px' }} />
-                   <div>Scanning pattern...</div>
-                </div>
-              ) : tips.length === 0 ? (
-                <div style={{ color: 'var(--text3)', fontSize: 14, textAlign: 'center', padding: '20px 0' }}>Add more transactions to unlock insights!</div>
+            <div style={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
+              <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 24 }}>System Health</div>
+              
+              {loadingHealth ? (
+                <div className="skeleton skeleton-circle" style={{ width: 160, height: 160, margin: '0 auto 24px' }} />
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {tips.map((tip, i) => (
-                    <div key={i} style={{
-                      display: 'flex', gap: 14, padding: '14px 16px',
-                      background: 'var(--bg3)', borderRadius: 12,
-                      borderLeft: `3px solid ${TIP_COLORS[tip.type] || TIP_COLORS.info}`,
-                      transition: 'transform 0.2s'
-                    }}
-                      onMouseOver={e => e.currentTarget.style.transform = 'translateX(4px)'}
-                      onMouseOut={e => e.currentTarget.style.transform = 'none'}
-                    >
-                      <span style={{ fontSize: 20, flexShrink: 0 }}>{TIP_ICONS[tip.type] || '💡'}</span>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', marginBottom: 2 }}>{tip.title}</div>
-                        <div style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.5 }}>{tip.message}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <ProgressRing 
+                  value={health?.score || 0} 
+                  color={health?.score >= 80 ? '#10b981' : health?.score >= 60 ? '#f59e0b' : '#ef4444'} 
+                />
               )}
-            </div>
 
-            {/* 50/30/20 Guide */}
-            <div className="card">
-              <div className="card-title">📐 50/30/20 Budget Rule</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-                {[
-                  { pct: 50, label: 'Needs', desc: 'Rent, groceries, bills', color: '#6c63ff', emoji: '🏠' },
-                  { pct: 30, label: 'Wants', desc: 'Dining, fun, shopping', color: '#ff6584', emoji: '🎉' },
-                  { pct: 20, label: 'Savings', desc: 'Emergency, SIP, EMI', color: '#43e97b', emoji: '💰' },
-                ].map(({ pct, label, desc, color, emoji }) => (
-                  <div key={label} style={{
-                    background: 'var(--bg3)', borderRadius: 12, padding: '16px', textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: 24, marginBottom: 4 }}>{emoji}</div>
-                    <div style={{ fontSize: 28, fontWeight: 800, color, marginBottom: 2 }}>{pct}%</div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>{label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4, lineHeight: 1.4 }}>{desc}</div>
-                  </div>
-                ))}
+              <div style={{ marginTop: 24 }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', marginBottom: 4 }}>{health?.label?.split(' ')[0]} Status</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--text3)', fontSize: 13, fontWeight: 600 }}>
+                  <ShieldCheck size={14} color="var(--accent)" />
+                  Grade {health?.grade} Compliance
+                </div>
+              </div>
+
+              <div style={{ marginTop: 32, textAlign: 'left' }}>
+                <MetricPod label="Savings Rate" value={health?.breakdown?.savings || 0} max={40} color="#10b981" />
+                <MetricPod label="Budget Adherence" value={health?.breakdown?.budget_adherence || 0} max={35} color="var(--accent)" />
+                <MetricPod label="Spending Stability" value={health?.breakdown?.stability || 0} max={25} color="#8b5cf6" />
               </div>
             </div>
           </div>
+
+          {/* Anomaly Card (If any) */}
+          {anomalies.length > 0 && (
+            <div className="card stagger-item" style={{ 
+              padding: 24, borderRadius: 24, border: '1px solid rgba(239, 68, 68, 0.2)',
+              background: 'rgba(239, 68, 68, 0.03)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ background: 'rgba(239,68,68,0.1)', padding: 8, borderRadius: 10 }}>
+                  <AlertOctagon size={20} color="#ef4444" />
+                </div>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: '#ef4444' }}>Safety Breach</h3>
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20, lineHeight: 1.5 }}>
+                {anomalies.length} Unusual transactions detected. Spending velocity is {anomalies[0].z_score}x higher than average.
+              </p>
+              <div style={{ background: 'var(--bg3)', borderRadius: 12, padding: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text2)' }}>{anomalies[0].category}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: '#ef4444' }}>₹{anomalies[0].amount.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Anomalies */}
-        {!h3 && anomalies.length > 0 && (
-          <div className="card" style={{ borderColor: 'rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.05)' }}>
-            <div className="card-title" style={{ color: 'var(--red)' }}>🚨 Unusual Activity Detected</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {anomalies.map(a => (
-                <div key={a.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  background: 'var(--bg3)', borderRadius: 12,
-                  padding: '14px 16px'
-                }}>
-                  <span style={{ fontSize: 24, flexShrink: 0 }}>⚠️</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
-                      {a.description?.slice(0, 60) || a.category}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>{a.message}</div>
+        {/* Right Column: Analytics & Tips */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, flex: 2 }}>
+          {/* 50/30/20 Rule Visualization */}
+          <div className="card stagger-item" style={{ padding: 32, borderRadius: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>Modern Budget Distribution</h3>
+                <p style={{ fontSize: 13, color: 'var(--text3)' }}>Real-time 50/30/20 Rule Adherence</p>
+              </div>
+              <PieChart size={24} color="var(--text3)" style={{ opacity: 0.5 }} />
+            </div>
+
+            <div style={{ height: 40, background: 'rgba(255,255,255,0.02)', borderRadius: 20, overflow: 'hidden', display: 'flex', marginBottom: 32 }}>
+              <div style={{ width: `${rule.needs}%`, background: '#6366f1', transition: 'width 1.5s ease' }} />
+              <div style={{ width: `${rule.wants}%`, background: '#f43f5e', transition: 'width 1.5s ease' }} />
+              <div style={{ width: `${rule.savings}%`, background: '#10b981', transition: 'width 1.5s ease' }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+              {[
+                { label: 'Needs', val: rule.needs, target: 50, color: '#6366f1' },
+                { label: 'Wants', val: rule.wants, target: 30, color: '#f43f5e' },
+                { label: 'Savings', val: rule.savings, target: 20, color: '#10b981' },
+              ].map(item => (
+                <div key={item.label}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }} />
+                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase' }}>{item.label}</span>
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--red)', flexShrink: 0 }}>
-                    ₹{a.amount.toLocaleString('en-IN')}
+                  <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)' }}>{item.val}%</div>
+                  <div style={{ fontSize: 11, color: item.val <= item.target ? '#10b981' : '#ef4444', fontWeight: 700, marginTop: 4 }}>
+                    Target: {item.target}%
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        )}
+
+          {/* AI Advisor Card */}
+          <div className="card stagger-item" style={{ padding: 32, borderRadius: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+              <div style={{ background: 'rgba(99,102,241,0.1)', padding: 10, borderRadius: 12 }}>
+                <Sparkles size={24} color="var(--accent)" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>AI Portfolio Advisor</h3>
+                <p style={{ fontSize: 13, color: 'var(--text3)' }}>Tailored financial optimizations</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+              {loadingTips ? [...Array(4)].map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: 100, borderRadius: 20 }} />
+              )) : tips.map((tip, i) => (
+                <div key={i} style={{ 
+                  padding: 24, borderRadius: 20, background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid var(--border)', position: 'relative'
+                }}>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div style={{ 
+                      width: 44, height: 44, borderRadius: 12, background: `${TIP_COLORS[tip.type]}15`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                    }}>
+                      {(() => {
+                        const Icon = TIP_ICONS[tip.type];
+                        return <Icon size={20} color={TIP_COLORS[tip.type]} />
+                      })()}
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>{tip.title}</h4>
+                      <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>{tip.message}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Savings Projection Card */}
+          <div className="card stagger-item" style={{ 
+            padding: 32, borderRadius: 28, background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.05), rgba(99, 102, 241, 0.05))'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+              <div style={{ background: 'rgba(16,185,129,0.1)', padding: 12, borderRadius: 14 }}>
+                <Wallet size={24} color="#10b981" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>Projected Potential</h3>
+                <p style={{ fontSize: 13, color: 'var(--text3)' }}>End-of-month savings estimate</p>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span style={{ fontSize: 32, fontWeight: 900, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>
+                ₹{(Math.max(0, (health?.monthly_income || 0) * (rule.savings / 100))).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+              </span>
+              <span style={{ fontSize: 13, color: '#10b981', fontWeight: 800, background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 6 }}>
+                + Est. Flow
+              </span>
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 12 }}>
+              Based on your current transaction velocity, you are projected to save approx. **{rule.savings}%** of your monthly income (₹{(health?.monthly_income || 0).toLocaleString()}).
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

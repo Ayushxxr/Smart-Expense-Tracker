@@ -46,16 +46,16 @@ const CATEGORY_ICONS = {
 }
 
 const CATEGORY_COLORS = {
-  'Food & Dining': '#ff6584',
-  'Transport': '#4facfe',
-  'Shopping': '#fa709a',
-  'Entertainment': '#a18cd1',
-  'Bills & Utilities': '#fda085',
-  'Healthcare': '#43e97b',
-  'Education': '#6c63ff',
-  'Travel': '#f093fb',
-  'Investments': '#38f9d7',
-  'Other': '#c3cfe2'
+  'Food & Dining': '#f97316',
+  'Transport':     '#3b82f6',
+  'Shopping':      '#eab308',
+  'Entertainment': '#a855f7',
+  'Bills & Utilities': '#0ea5e9',
+  'Healthcare':    '#ef4444',
+  'Education':     '#14b8a6',
+  'Travel':        '#f43f5e',
+  'Investments':   '#22c55e',
+  'Other':         '#6b7280'
 }
 
 function fmt(n) { return `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` }
@@ -106,6 +106,20 @@ function AddExpenseModal({ onClose, editData }) {
     onError: (err) => toast.error(err.response?.data?.detail || 'Error saving expense')
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete(`/api/expenses/${editData.id}`),
+    onSuccess: () => {
+      qc.invalidateQueries(['expenses'])
+      qc.invalidateQueries(['summary'])
+      qc.invalidateQueries(['trend'])
+      qc.invalidateQueries(['breakdown'])
+      qc.invalidateQueries(['budgets'])
+      toast.success('Transaction deleted ✅')
+      onClose()
+    },
+    onError: () => toast.error('Error deleting transaction')
+  })
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -141,11 +155,26 @@ function AddExpenseModal({ onClose, editData }) {
               value={form.expense_date}
               onChange={e => setForm({ ...form, expense_date: e.target.value })} required />
           </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-            <button id="expense-save" type="submit" className="btn btn-primary" disabled={mutation.isPending}>
-              {mutation.isPending ? <span className="spinner" /> : (editData ? 'Update' : 'Add Expense')}
-            </button>
+          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            {editData ? (
+              <button 
+                type="button" 
+                className="btn btn-icon" 
+                style={{ color: 'var(--red)', background: 'rgba(239, 68, 68, 0.1)', border: 'none', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}
+                onClick={() => { if (confirm('Delete this transaction?')) deleteMutation.mutate() }}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? <span className="spinner" /> : <Trash2 size={16} />}
+                Delete
+              </button>
+            ) : <div />}
+            
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button type="button" className="btn btn-secondary" style={{ borderRadius: 12 }} onClick={onClose}>Cancel</button>
+              <button id="expense-save" type="submit" className="btn btn-primary" style={{ borderRadius: 12 }} disabled={mutation.isPending}>
+                {mutation.isPending ? <span className="spinner" /> : (editData ? 'Update' : 'Add Expense')}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -440,7 +469,7 @@ export default function Expenses() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">💸 Expenses</h1>
+          <h1 className="page-title">Expenses</h1>
           <p className="page-sub">{total} transactions</p>
         </div>
         <div className="page-header-controls" style={{ 
@@ -490,9 +519,21 @@ export default function Expenses() {
         {/* ── Expense List ── */}
         <div className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border)', borderRadius: 16 }}>
           {isLoading ? (
-            <div style={{ textAlign: 'center', padding: 80, color: 'var(--text3)' }}>
-              <span className="spinner" style={{ margin: '0 auto 16px' }} />
-              <div style={{ fontWeight: 600 }}>Fetching transactions...</div>
+            <div style={{ padding: '0' }}>
+              {[...Array(8)].map((_, i) => (
+                <div key={i} style={{ 
+                  display: 'flex', alignItems: 'center', gap: 14, 
+                  padding: '16px 20px', 
+                  borderBottom: '1px solid var(--border)' 
+                }}>
+                  <div className="skeleton skeleton-circle" style={{ width: 40, height: 40, flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: 16, width: '50%', marginBottom: 8 }} />
+                    <div className="skeleton" style={{ height: 10, width: '30%' }} />
+                  </div>
+                  <div className="skeleton" style={{ height: 20, width: 70, marginLeft: 'auto' }} />
+                </div>
+              ))}
             </div>
           ) : expenses.length === 0 ? (
             <div className="empty-state" style={{ padding: 60 }}>
@@ -520,26 +561,42 @@ export default function Expenses() {
               </div>
 
               {/* Transactions */}
-              {items.map((exp) => {
+              {items.map((exp, idx) => {
                 const IconComp = CATEGORY_ICONS[exp.category] || Box
                 const catColor = CATEGORY_COLORS[exp.category] || 'var(--accent)'
                 return (
-                  <div key={exp.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    padding: '12px 20px',
-                    borderBottom: '1px solid var(--border)',
-                    transition: 'all 0.15s ease',
-                    position: 'relative',
-                    background: 'var(--surface)'
-                  }}
-                    onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                    onMouseOut={e => e.currentTarget.style.background = 'var(--surface)'}
+                  <div key={exp.id} 
+                    className="stagger-item" 
+                    onClick={() => setEditItem({ ...exp })}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      padding: '12px 20px',
+                      borderBottom: '1px solid var(--border)',
+                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                      position: 'relative',
+                      background: 'var(--surface)',
+                      animationDelay: `${idx * 0.05}s`,
+                      cursor: 'pointer'
+                    }}
+                    onMouseOver={e => {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.zIndex = '5';
+                      e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.background = 'var(--surface)';
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.zIndex = '1';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
                   >
                     {/* Category color bar */}
                     <div style={{
                       position: 'absolute', left: 0, top: '20%', bottom: '20%',
                       width: 4, borderRadius: '0 4px 4px 0',
-                      background: catColor
+                      background: catColor,
+                      boxShadow: `0 0 10px ${catColor}60`
                     }} />
 
                     {/* Icon container */}
@@ -547,35 +604,52 @@ export default function Expenses() {
                       width: 40, height: 40, borderRadius: 12, flexShrink: 0,
                       background: 'var(--bg3)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: catColor
+                      color: 'var(--text2)',
+                      border: '1px solid var(--border)'
                     }}>
-                      <IconComp size={20} strokeWidth={2} />
+                      <IconComp size={20} strokeWidth={1.8} />
                     </div>
 
-                    {/* Description + metadata */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Description + category */}
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
                       <div style={{
-                        fontSize: 14, fontWeight: 700, color: 'var(--text)',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        fontSize: 14.5, fontWeight: 700, color: 'var(--text)',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        lineHeight: '20px'
                       }}>
                         {exp.description || exp.category}
                       </div>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text3)', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      <div style={{ 
+                        fontSize: 10, fontWeight: 800, color: 'var(--text3)', 
+                        textTransform: 'uppercase', letterSpacing: '0.8px',
+                        fontFamily: 'var(--font-title)',
+                        opacity: 0.8,
+                        lineHeight: '16px'
+                      }}>
                         {exp.category}
                       </div>
                     </div>
 
                     {/* Amount */}
-                    <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text)', flexShrink: 0, marginRight: 8 }}>
-                      {fmt(exp.amount)}
-                    </div>
-
-                    {/* Actions */}
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                      <button className="btn-icon btn-sm" style={{ padding: 8, background: 'transparent', border: 'none', color: 'var(--text3)' }}
-                        onClick={() => setEditItem({ ...exp })}><Edit2 size={16} /></button>
-                      <button className="btn-icon btn-sm" style={{ padding: 8, background: 'transparent', border: 'none', color: 'var(--red)' }}
-                        onClick={() => { if (confirm('Delete transaction?')) deleteMutation.mutate(exp.id) }}><Trash2 size={16} /></button>
+                    <div style={{ 
+                      flexShrink: 0, 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'flex-end', 
+                      marginLeft: 'auto',
+                      paddingLeft: 10,
+                      justifyContent: 'center'
+                    }}>
+                      <div style={{ 
+                        fontWeight: 700, fontSize: 16, color: 'var(--text)', 
+                        fontFamily: 'var(--font-mono)',
+                        letterSpacing: '-0.5px',
+                        lineHeight: '20px',
+                        display: 'flex',
+                        alignItems: 'baseline'
+                      }}>
+                        ₹{Number(exp.amount).toLocaleString('en-IN')}
+                      </div>
                     </div>
                   </div>
                 )

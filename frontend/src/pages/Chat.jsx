@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Send, Bot, User as UserIcon, ShieldCheck } from 'lucide-react'
 import api from '../api/client'
 
 const SUGGESTIONS = [
-  "dropped 350 on Zomato tonight",
+  "spent 500 on repairing",
+  "log 200 for biryani",
+  "yesterday i spent 800 on clothes",
+  "coffee 150 today",
+  "How much did I spend this week?",
+  "show my food expenses",
   "rapido cab 120 yesterday",
-  "Big Bazaar groceries 800",
-  "recharged Jio for 239",
-  "How much did I spend this month?",
-  "What's my top spending category?",
-  "show food expenses this week",
 ]
 
 function TypingDots() {
@@ -44,14 +45,14 @@ function Message({ msg }) {
       {!isUser && (
         <div style={{
           width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-          background: 'linear-gradient(135deg, var(--accent), var(--accent2))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16
-        }}>🤖</div>
+          background: 'var(--accent)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}><Bot size={16} color="#fff" strokeWidth={2} /></div>
       )}
       <div style={{
         maxWidth: '75%',
         background: isUser
-          ? 'linear-gradient(135deg, var(--accent), var(--accent2))'
+          ? 'var(--accent)'
           : 'var(--surface2)',
         color: isUser ? '#fff' : 'var(--text)',
         padding: '12px 16px',
@@ -67,20 +68,20 @@ function Message({ msg }) {
         {msg.expense_logged && (
           <div style={{
             marginTop: 10, padding: '10px 12px',
-            background: 'rgba(67,233,123,0.1)', borderRadius: 8,
-            border: '1px solid rgba(67,233,123,0.2)',
-            fontSize: 12, color: '#4ade80',
+            background: 'rgba(107,191,149,0.08)', borderRadius: 8,
+            border: '1px solid rgba(107,191,149,0.2)',
+            fontSize: 12, color: 'var(--green)',
             display: 'flex', alignItems: 'center', gap: 6
           }}>
-            ✅ <span>Logged: {msg.expense_logged.amount} • {msg.expense_logged.category}</span>
+            <ShieldCheck size={14} /> <span>Logged: {msg.expense_logged.amount} • {msg.expense_logged.category}</span>
           </div>
         )}
       </div>
       {isUser && (
         <div style={{
           width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-          background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16
-        }}>👤</div>
+          background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}><UserIcon size={16} color="var(--text3)" strokeWidth={1.8} /></div>
       )}
     </div>
   )
@@ -90,7 +91,7 @@ export default function Chat() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "Hey! 👋 I'm your AI expense assistant.\n\nTell me what you spent — like **\"coffee 150\"** or **\"uber 200 yesterday\"** — and I'll log it for you.\n\nYou can also ask me things like **\"how much did I spend this week?\"** 📊",
+      content: "Hey! I'm your AI expense assistant.\n\nYou can log expenses naturally by writing things like **\"spent 500 on biryani\"** or **\"log 1200 for repairing yesterday\"**.\n\nI also understand quick notes like **\"coffee 150\"**. Just tell me what you spent!",
     }
   ])
   const [input, setInput] = useState('')
@@ -146,15 +147,15 @@ export default function Chat() {
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 70px)' }} className="chat-messages">
       <div className="page-header" style={{ flexShrink: 0, paddingBottom: 20, borderBottom: '1px solid var(--border)' }}>
         <div>
-          <h1 className="page-title">🤖 AI Chat</h1>
+          <h1 className="page-title">AI Chat</h1>
           <p className="page-sub">Log expenses & ask questions naturally</p>
         </div>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          background: 'rgba(67,233,123,0.1)', border: '1px solid rgba(67,233,123,0.2)',
-          borderRadius: 99, padding: '6px 14px', fontSize: 12, color: '#4ade80'
+          background: 'rgba(107,191,149,0.1)', border: '1px solid rgba(107,191,149,0.2)',
+          borderRadius: 99, padding: '6px 14px', fontSize: 12, color: 'var(--green)'
         }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', animation: 'pulse 2s infinite' }} />
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--green)', animation: 'pulse 2s infinite' }} />
           Online
         </div>
       </div>
@@ -188,9 +189,9 @@ export default function Chat() {
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 20 }}>
             <div style={{
               width: 32, height: 32, borderRadius: '50%',
-              background: 'linear-gradient(135deg, var(--accent), var(--accent2))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16
-            }}>🤖</div>
+              background: 'var(--accent)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}><Bot size={16} color="#fff" strokeWidth={2} /></div>
             <div style={{
               background: 'var(--surface2)', padding: '12px 16px',
               borderRadius: '18px 18px 18px 4px', border: '1px solid var(--border)'
@@ -223,11 +224,19 @@ export default function Chat() {
           <button
             id="chat-send"
             className="btn btn-primary"
-            style={{ borderRadius: 99, width: 44, padding: 0, flexShrink: 0 }}
+            style={{ 
+              borderRadius: '50%', 
+              width: 46, height: 46, 
+              padding: 0, 
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
             onClick={() => send()}
             disabled={mutation.isPending || !input.trim()}
           >
-            🚀
+            <Send size={18} strokeWidth={2.5} style={{ marginLeft: -2, marginTop: 2 }} />
           </button>
         </div>
       </div>
