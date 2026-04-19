@@ -49,3 +49,4 @@ htmlcov/
 # Uploads / temp files
 uploads/
 *.tmp
+backend/.env 
