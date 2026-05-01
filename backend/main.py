@@ -5,13 +5,19 @@ from app.core.config import settings
 from app.core.database import Base, engine
 from app.api import auth, expenses, dashboard, budgets, chat, ocr, insights, categories
 
-# Create all tables on startup
-Base.metadata.create_all(bind=engine)
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create tables on startup
+    Base.metadata.create_all(bind=engine)
+    yield
 
 app = FastAPI(
     title="Smart Expense Tracker API",
     description="AI-powered personal finance tracker",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
