@@ -32,10 +32,12 @@ app.include_router(ocr.router)
 app.include_router(insights.router)
 app.include_router(categories.router, prefix="/api/categories", tags=["Categories"])
 
-@app.get("/", methods=["GET", "HEAD"])
+@app.get("/")
+@app.head("/")
 def root():
     return {"message": "Smart Expense Tracker API Status: Online"}
 
-@app.get("/health", methods=["GET", "HEAD"])
+@app.get("/health")
+@app.head("/health")
 def health():
     return {"status": "ok", "version": "1.0.0"}
