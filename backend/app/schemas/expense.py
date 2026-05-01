@@ -45,7 +45,3 @@ class ExpenseListResponse(BaseModel):
     per_page: int
 
 
-class ImportSummary(BaseModel):
-    imported: int
-    skipped: int
-    categories: dict

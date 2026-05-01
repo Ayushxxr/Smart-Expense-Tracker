@@ -97,7 +97,7 @@ BUDGETS = [
 
 
 def seed():
-    print("🌱 Seeding database...")
+    print("[*] Seeding database...")
     Base.metadata.create_all(bind=engine)
 
     db = Session(engine)
@@ -113,9 +113,9 @@ def seed():
         db.add(user)
         db.commit()
         db.refresh(user)
-        print(f"  ✅ Created user: {SEED_EMAIL}")
+        print(f"  [OK] Created user: {SEED_EMAIL}")
     else:
-        print(f"  ✓ User already exists: {SEED_EMAIL}")
+        print(f"  [-] User already exists: {SEED_EMAIL}")
         # Clear old seed data
         db.query(Expense).filter(Expense.user_id == user.id).delete()
         db.query(Budget).filter(Budget.user_id == user.id).delete()
@@ -177,11 +177,11 @@ def seed():
     db.commit()
     db.close()
 
-    print(f"  ✅ Added {total_added} expenses across {MONTHS_BACK} months")
-    print(f"  ✅ Added {len(BUDGETS)} budgets for current month")
+    print(f"  [OK] Added {total_added} expenses across {MONTHS_BACK} months")
+    print(f"  [OK] Added {len(BUDGETS)} budgets for current month")
     print()
     print("=" * 40)
-    print("✨ Seed complete!")
+    print("*** Seed complete! ***")
     print(f"   Login: {SEED_EMAIL}")
     print(f"   Password: {SEED_PASSWORD}")
     print(f"   URL: http://localhost:5173/login")

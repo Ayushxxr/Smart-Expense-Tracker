@@ -139,20 +139,25 @@ export default function OCRScanner() {
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      minHeight: 280
-                    }}>
+                      minHeight: 280,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => cameraRef.current.click()}
+                    >
                       {/* Viewfinder Corners */}
-                      <div style={{ position: 'absolute', top: 15, left: 15, width: 20, height: 20, borderLeft: '2px solid var(--accent)', borderTop: '2px solid var(--accent)', opacity: 0.6 }} />
-                      <div style={{ position: 'absolute', top: 15, right: 15, width: 20, height: 20, borderRight: '2px solid var(--accent)', borderTop: '2px solid var(--accent)', opacity: 0.6 }} />
-                      <div style={{ position: 'absolute', bottom: 15, left: 15, width: 20, height: 20, borderLeft: '2px solid var(--accent)', borderBottom: '2px solid var(--accent)', opacity: 0.6 }} />
-                      <div style={{ position: 'absolute', bottom: 15, right: 15, width: 20, height: 20, borderRight: '2px solid var(--accent)', borderBottom: '2px solid var(--accent)', opacity: 0.6 }} />
+                      <div className="pulse" style={{ position: 'absolute', top: 15, left: 15, width: 20, height: 20, borderLeft: '3px solid var(--accent)', borderTop: '3px solid var(--accent)', opacity: 0.8, borderRadius: '4px 0 0 0' }} />
+                      <div className="pulse" style={{ position: 'absolute', top: 15, right: 15, width: 20, height: 20, borderRight: '3px solid var(--accent)', borderTop: '3px solid var(--accent)', opacity: 0.8, borderRadius: '0 4px 0 0' }} />
+                      <div className="pulse" style={{ position: 'absolute', bottom: 15, left: 15, width: 20, height: 20, borderLeft: '3px solid var(--accent)', borderBottom: '3px solid var(--accent)', opacity: 0.8, borderRadius: '0 0 0 4px' }} />
+                      <div className="pulse" style={{ position: 'absolute', bottom: 15, right: 15, width: 20, height: 20, borderRight: '3px solid var(--accent)', borderBottom: '3px solid var(--accent)', opacity: 0.8, borderRadius: '0 0 4px 0' }} />
 
                       <div style={{ textAlign: 'center', marginBottom: 24 }}>
                         <div style={{ background: 'rgba(132, 101, 255, 0.1)', width: 50, height: 50, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
                           <ScanLine size={24} color="var(--accent)" />
                         </div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Ready to Scan</div>
                         <div style={{ fontSize: 12, color: 'var(--text3)' }}>Choose a method to extract data</div>
+                        <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          Your data stays private 🔒
+                        </div>
                       </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, width: '100%', maxWidth: 360 }}>
@@ -175,7 +180,7 @@ export default function OCRScanner() {
                           onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)' }}
                         >
                           <Camera size={20} color="var(--accent)" />
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Camera</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Scan Receipt</div>
                         </button>
 
                         {/* Gallery Tile */}
@@ -197,8 +202,12 @@ export default function OCRScanner() {
                           onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)' }}
                         >
                           <Image size={20} color="var(--text2)" />
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Gallery</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Upload Receipt</div>
                         </button>
+                      </div>
+
+                      <div style={{ marginTop: 16, fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, opacity: 0.6 }}>
+                        Takes ~2 seconds to extract details
                       </div>
                     </div>
                   ) : (
@@ -258,6 +267,17 @@ export default function OCRScanner() {
                     </div>
                   )}
 
+                  {!file && (
+                    <div style={{ textAlign: 'center', marginTop: 16 }}>
+                      <button 
+                        onClick={() => navigate('/expenses')}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--accent)', fontSize: 13, fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        Or add manually
+                      </button>
+                    </div>
+                  )}
+
                   {ocrText && (
                     <div style={{ marginTop: 16, padding: '12px', background: 'var(--bg3)', borderRadius: 10, border: '1px solid var(--border)' }}>
                       <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -284,9 +304,9 @@ export default function OCRScanner() {
                 <div className="form-group">
                   <label className="form-label">Amount (₹)</label>
                   <input className="form-input" style={{ fontSize: 18, fontWeight: 700 }}
-                    type="number" min="0.01" step="0.01"
-                    value={prefill.amount || ''} placeholder="0.00"
-                    onChange={e => setPrefill({ ...prefill, amount: parseFloat(e.target.value) })} />
+                    type="number" min="1" step="1"
+                    value={prefill.amount || ''} placeholder="0"
+                    onChange={e => setPrefill({ ...prefill, amount: Math.floor(parseFloat(e.target.value)) })} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Category</label>

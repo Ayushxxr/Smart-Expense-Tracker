@@ -4,6 +4,11 @@ import { format, subMonths, addMonths, parseISO, getDaysInMonth, getDate } from 
 import { Calendar, ChevronLeft, ChevronRight, Target, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import api from '../api/client'
 import toast from 'react-hot-toast'
+import * as Icons from 'lucide-react'
+import { categoryService } from '../api/categoryService'
+
+const CATEGORY_FALLBACK_COLOR = '#6b7280'
+const CATEGORY_FALLBACK_ICON = Icons.Target
 
 function MonthPicker({ value, onChange }) {
   const [open, setOpen] = useState(false)
@@ -93,17 +98,17 @@ function MonthNavigator({ value, onChange }) {
           className="btn-icon"
           style={{ 
             width: 44, height: 44, borderRadius: 14, 
-            background: 'rgba(255,255,255,0.03)', 
+            background: 'var(--bg3)', 
             border: '1px solid var(--border)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.2s'
           }}
           onMouseOver={e => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+            e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.1)';
             e.currentTarget.style.borderColor = 'var(--accent)';
           }}
           onMouseOut={e => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+            e.currentTarget.style.background = 'var(--bg3)';
             e.currentTarget.style.borderColor = 'var(--border)';
           }}
         >
@@ -139,29 +144,6 @@ function MonthNavigator({ value, onChange }) {
   )
 }
 
-const CATEGORIES = [
-  'Food & Dining','Transport','Shopping','Entertainment',
-  'Bills & Utilities','Healthcare','Education','Travel','Investments','Other'
-]
-
-const CATEGORY_EMOJI = {
-  'Food & Dining': '🍔', 'Transport': '🚗', 'Shopping': '🛍️',
-  'Entertainment': '🎬', 'Bills & Utilities': '💡', 'Healthcare': '💊',
-  'Education': '📚', 'Travel': '✈️', 'Investments': '📈', 'Other': '📦'
-}
-
-const CATEGORY_COLORS = {
-  'Food & Dining': '#f97316',
-  'Transport':     '#3b82f6',
-  'Shopping':      '#eab308',
-  'Entertainment': '#a855f7',
-  'Bills & Utilities': '#0ea5e9',
-  'Healthcare':    '#ef4444',
-  'Education':     '#14b8a6',
-  'Travel':        '#f43f5e',
-  'Investments':   '#22c55e',
-  'Other':         '#6b7280'
-}
 
 function fmt(n) { 
   return (
@@ -174,11 +156,17 @@ function fmt(n) {
 function BudgetModal({ editData, onClose }) {
   const qc = useQueryClient()
   const today = new Date()
+  const { data: catData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: categoryService.getCategories
+  })
+  const categories = catData || []
+
   const [form, setForm] = useState(editData ? {
     ...editData,
     limit_amount: String(editData.limit_amount)
   } : {
-    category: 'Food & Dining',
+    category: categories[0]?.name || 'Food & Dining',
     limit_amount: '',
     month_year: format(today, 'yyyy-MM')
   })
@@ -216,7 +204,7 @@ function BudgetModal({ editData, onClose }) {
             <label className="form-label">Category</label>
             <select className="form-select" value={form.category} disabled={!!editData}
               onChange={e => setForm({ ...form, category: e.target.value })}>
-              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+              {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
             {editData && <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>* Category cannot be changed after creation</p>}
           </div>
@@ -265,6 +253,12 @@ export default function Budgets() {
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'))
   const qc = useQueryClient()
 
+  const { data: catData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: categoryService.getCategories
+  })
+  const categories = catData || []
+
   const { data: budgets = [], isLoading } = useQuery({
     queryKey: ['budgets-page', month],
     queryFn: () => api.get(`/api/budgets?month_year=${month}`).then(r => r.data),
@@ -285,14 +279,10 @@ export default function Budgets() {
 
   const getBudgetHealth = (spent, limit) => {
     const ratio = spent / (limit || 1)
-    const proportionalTarget = daysPassed / daysInMonth
     
-    if (ratio >= 1) return { label: 'OVER BUDGET', color: 'var(--red)' }
-    if (ratio > proportionalTarget + 0.15) return { label: 'SPENDING FAST', color: '#ff4d4d' }
-    if (ratio > proportionalTarget) return { label: 'NEAR LIMIT', color: '#f97316' }
-    if (ratio < 0.1 && spent > 0) return { label: 'ON TRACK', color: '#22c55e' }
-    if (spent === 0) return { label: 'PERFECT', color: 'var(--accent)' }
-    return { label: 'ON TRACK', color: '#22c55e' }
+    if (ratio >= 1) return { label: 'OVER BUDGET', color: 'var(--red)', rgb: 'var(--red-rgb)' }
+    if (ratio >= 0.7) return { label: 'NEAR LIMIT', color: 'var(--yellow)', rgb: 'var(--yellow-rgb)' }
+    return { label: 'ON TRACK', color: 'var(--green)', rgb: 'var(--green-rgb)' }
   }
 
   const getRunway = (spent, limit) => {
@@ -300,13 +290,13 @@ export default function Budgets() {
     const daily = Math.max(0, Math.round(remaining / (daysRemaining || 1)))
     
     return {
-      remaining: Math.abs(remaining).toLocaleString(),
-      daily: daily.toLocaleString(),
+      remaining: Math.abs(remaining).toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+      daily: daily.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
       isOver: spent >= limit
     }
   }
 
-  const health = totalRemaining < 0 ? { label: "EXCEEDED", color: "#ef4444" } : totalPercent > 80 ? { label: "TIGHT", color: "#f97316" } : { label: "HEALTHY", color: "#22c55e" }
+  const health = totalRemaining < 0 ? { label: "EXCEEDED", color: "var(--red)", rgb: "var(--red-rgb)" } : totalPercent > 70 ? { label: "NEAR LIMIT", color: "var(--yellow)", rgb: "var(--yellow-rgb)" } : { label: "HEALTHY", color: "var(--green)", rgb: "var(--green-rgb)" }
 
   return (
     <div>
@@ -341,9 +331,9 @@ export default function Budgets() {
             <h1 className="page-title" style={{ marginBottom: 0 }}>Budgets</h1>
             <div style={{ 
               display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: `${health.color}15`,
+              background: `rgba(${health.rgb}, 0.1)`,
               padding: '4px 10px', borderRadius: 10,
-              border: `1px solid ${health.color}20`
+              border: `1px solid rgba(${health.rgb}, 0.2)`
             }}>
               <div style={{ 
                 width: 6, height: 6, borderRadius: '50%', 
@@ -369,11 +359,46 @@ export default function Budgets() {
           maxWidth: 400 
         }}>
           <MonthNavigator value={month} onChange={setMonth} />
-          <button id="add-budget-btn" className="btn btn-primary" style={{ height: 44, borderRadius: 12, fontSize: 14, fontWeight: 700 }} onClick={() => setShowModal(true)}>
-            Set Budget
-          </button>
         </div>
       </div>
+
+      {/* Floating Action Button for Budget [NEW] */}
+      <button 
+        id="add-budget-btn" 
+        className="btn btn-primary" 
+        onClick={() => setShowModal(true)}
+        style={{
+          position: 'fixed',
+          bottom: 100, // Above the tab bar
+          right: 24,
+          zIndex: 900,
+          height: 56,
+          width: 'auto',
+          minWidth: 150,
+          padding: '0 24px',
+          borderRadius: 20,
+          fontSize: 15,
+          fontWeight: 800,
+          boxShadow: '0 12px 24px -6px rgba(132, 101, 255, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          background: 'linear-gradient(135deg, var(--accent), #704dff)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}
+        onMouseOver={e => {
+          e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+          e.currentTarget.style.boxShadow = '0 16px 32px -8px rgba(132, 101, 255, 0.6)';
+        }}
+        onMouseOut={e => {
+          e.currentTarget.style.transform = 'none';
+          e.currentTarget.style.boxShadow = '0 12px 24px -6px rgba(132, 101, 255, 0.5)';
+        }}
+      >
+        <Icons.Plus size={20} strokeWidth={3} />
+        Set Budget
+      </button>
 
       <div className="page-body">
         {isLoading ? (
@@ -433,22 +458,25 @@ export default function Budgets() {
               <div style={{ position: 'relative', width: 120, height: 120 }}>
                 <svg width="120" height="120" viewBox="0 0 100 100">
                   {/* Background Circle */}
-                  <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="8" />
+                  <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--border)" strokeWidth="8" />
                   {/* Progress Circle */}
                   <circle 
                     cx="50" cy="50" r="40" fill="transparent" 
-                    stroke={totalRemaining < 0 ? '#ef4444' : 'var(--accent)'} 
+                    stroke={health.color} 
                     strokeWidth="8" 
                     strokeDasharray="251.2"
                     strokeDashoffset={251.2 - (251.2 * Math.min(totalPercent, 100)) / 100}
                     strokeLinecap="round"
                     transform="rotate(-90 50 50)"
-                    style={{ animation: 'gauge-draw 1.5s ease-out forwards', filter: `drop-shadow(0 0 8px ${totalRemaining < 0 ? '#ef4444' : 'var(--accent)'}40)` }}
+                    style={{ animation: 'gauge-draw 1.5s ease-out forwards', filter: `drop-shadow(0 0 8px ${health.color}40)` }}
                   />
-                  {/* Percentage Text */}
-                  <text x="50" y="55" fontSize="18" fontWeight="800" fill="var(--text)" textAnchor="middle" fontFamily="var(--font-title)">
+                  {/* Percentage Text - UPDATED LOGIC */}
+                  <text x="50" y="55" fontSize="18" fontWeight="900" fill="var(--text)" textAnchor="middle" fontFamily="var(--font-title)">
                     {totalPercent}%
                   </text>
+                  {totalPercent > 100 && (
+                    <text x="50" y="66" fontSize="7" fontWeight="800" fill="var(--red)" textAnchor="middle" textTransform="uppercase" letterSpacing="0.5">OVER</text>
+                  )}
                 </svg>
               </div>
 
@@ -456,7 +484,7 @@ export default function Budgets() {
               <div style={{ display: 'flex', gap: 40, flex: 1, flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
-                    REMAINING
+                    {totalRemaining < 0 ? 'EXCEEDED BY' : 'REMAINING'}
                   </div>
                   <div style={{ 
                     fontSize: 32, fontWeight: 900, 
@@ -464,7 +492,7 @@ export default function Budgets() {
                     fontFamily: 'var(--font-title)',
                     letterSpacing: '-1px'
                   }}>
-                    {fmt(Math.max(0, totalRemaining))}
+                    {fmt(Math.abs(totalRemaining))}
                   </div>
                 </div>
 
@@ -481,9 +509,11 @@ export default function Budgets() {
           </div>
 
             {/* Budget Cards Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24, paddingBottom: 100 }}>
               {budgets.map((b, idx) => {
-                const accent = CATEGORY_COLORS[b.category] || 'var(--accent)'
+                const catInfo = categories.find(c => c.name === b.category)
+                const accent = catInfo?.color || CATEGORY_FALLBACK_COLOR
+                const IconComp = Icons[catInfo?.icon] || CATEGORY_FALLBACK_ICON
                 const isExceeded = b.status === 'exceeded'
                 const isWarning = b.status === 'warning'
                 
@@ -493,10 +523,10 @@ export default function Budgets() {
                     onClick={() => setEditItem(b)}
                     style={{ 
                       position: 'relative', 
-                      background: 'rgba(25, 25, 40, 0.4)',
+                      background: 'var(--surface)',
                       backdropFilter: 'blur(8px)',
                       border: '1px solid var(--border)',
-                      boxShadow: 'none',
+                      boxShadow: 'var(--shadow)',
                       borderRadius: 24,
                       padding: '24px',
                       cursor: 'pointer',
@@ -519,12 +549,14 @@ export default function Budgets() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                         <div style={{ 
                           width: 44, height: 44, borderRadius: 14, 
-                          background: `${accent}15`, 
+                          background: `rgba(var(--accent-rgb), 0.1)`, 
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          border: `1px solid ${accent}30`,
-                          boxShadow: `0 0 15px ${accent}10`
+                          border: `1px solid var(--border)`,
+                          boxShadow: `0 0 15px rgba(var(--accent-rgb), 0.05)`
                         }}>
-                          <span style={{ fontSize: 20 }}>{CATEGORY_EMOJI[b.category] || '🎯'}</span>
+                          <span style={{ fontSize: 20 }}>
+                            <IconComp size={24} strokeWidth={2} />
+                          </span>
                         </div>
                         <div>
                           <div style={{ fontWeight: 800, color: 'var(--text)', fontSize: 16, fontFamily: 'var(--font-title)' }}>
@@ -559,13 +591,13 @@ export default function Budgets() {
                       </div>
                     </div>
 
-                    <div className="budget-bar-bg" style={{ height: 8, background: 'rgba(255,255,255,0.03)', borderRadius: 4, overflow: 'hidden' }}>
+                    <div className="budget-bar-bg" style={{ height: 8, background: 'var(--bg3)', borderRadius: 4, overflow: 'hidden' }}>
                       <div 
                         style={{ 
                           height: '100%',
                           width: `${Math.min(b.percentage, 100)}%`,
-                          background: isExceeded ? 'linear-gradient(90deg, #ef4444, #f87171)' : isWarning ? 'linear-gradient(90deg, #f97316, #fb923c)' : `linear-gradient(90deg, ${accent}, ${accent}cc)`,
-                          boxShadow: isExceeded ? '0 0 10px rgba(239, 68, 68, 0.4)' : 'none',
+                          background: isExceeded ? 'linear-gradient(90deg, var(--red), #f87171)' : isWarning ? 'linear-gradient(90deg, var(--yellow), #fde047)' : `linear-gradient(90deg, var(--green), #16a34a)`,
+                          boxShadow: isExceeded ? '0 0 10px rgba(var(--red-rgb), 0.4)' : 'none',
                           borderRadius: 4,
                           transition: 'width 0.8s ease-out'
                         }} 
@@ -574,7 +606,7 @@ export default function Budgets() {
 
                     <div style={{ 
                       display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', 
-                      marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.03)' 
+                      marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' 
                     }}>
                       <div>
                         <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>
@@ -592,8 +624,17 @@ export default function Budgets() {
                         <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>
                           Daily Limit
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
-                          ₹{getRunway(b.spent_amount, b.limit_amount).daily}
+                        <div style={{ fontSize: 11, fontWeight: 800, color: (b.limit_amount - b.spent_amount) <= 0 ? 'var(--red)' : 'var(--text)', lineHeight: 1.2 }}>
+                          {(b.limit_amount - b.spent_amount) <= 0 ? (
+                            'No safe daily limit'
+                          ) : (
+                            <>
+                              ₹{getRunway(b.spent_amount, b.limit_amount).daily}/day
+                              <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--text3)', marginTop: 2 }}>
+                                for next {daysRemaining || 1} days
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
 

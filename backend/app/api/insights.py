@@ -174,7 +174,6 @@ def get_tips(
         tips = [
             {"icon": "📊", "title": "Set Budgets", "message": "Set monthly budgets per category to track spending limits.", "type": "info"},
             {"icon": "🎯", "title": "50/30/20 Rule", "message": "Try spending 50% on needs, 30% on wants, and saving 20% each month.", "type": "info"},
-            {"icon": "📱", "title": "Import Statement", "message": "Import your bank statement to get a full picture instantly.", "type": "info"},
         ]
 
     return {"tips": tips, "total_spent": round(total, 2)}

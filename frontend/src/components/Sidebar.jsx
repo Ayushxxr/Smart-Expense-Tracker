@@ -4,13 +4,14 @@ import toast from 'react-hot-toast'
 import {
   LayoutDashboard, Receipt, Target,
   Sparkles, MessageCircle, ScanLine,
-  LogOut, User, Wallet
+  LogOut, User, Wallet, Layout
 } from 'lucide-react'
 
 const NAV = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/expenses',  icon: Receipt,          label: 'Expenses'  },
   { path: '/budgets',   icon: Target,           label: 'Budgets'   },
+  { path: '/categories', icon: Layout,          label: 'Categories' },
   null,
   { path: '/insights',  icon: Sparkles,         label: 'AI Insights' },
   { path: '/chat',      icon: MessageCircle,    label: 'AI Chat'   },

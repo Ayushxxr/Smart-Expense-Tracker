@@ -14,12 +14,10 @@ router = APIRouter(prefix="/api/budgets", tags=["budgets"])
 
 
 def _get_spent(db, user_id, category, month_year):
-    year, m = map(int, month_year.split("-"))
     return db.query(func.sum(Expense.amount)).filter(
         Expense.user_id == user_id,
         Expense.category == category,
-        extract("year", Expense.expense_date) == year,
-        extract("month", Expense.expense_date) == m,
+        func.strftime("%Y-%m", Expense.expense_date) == month_year
     ).scalar() or 0.0
 
 
@@ -37,7 +35,7 @@ def list_budgets(
     for b in budgets:
         spent = _get_spent(db, current_user.id, b.category, my)
         pct = round(spent / b.limit_amount * 100, 1) if b.limit_amount > 0 else 0
-        status = "exceeded" if pct >= 100 else "warning" if pct >= 80 else "ok"
+        status = "exceeded" if pct >= 100 else "warning" if pct >= 70 else "ok"
         result.append({
             "id": b.id,
             "category": b.category,
@@ -81,7 +79,7 @@ def create_budget(
     pct = round(spent / budget.limit_amount * 100, 1) if budget.limit_amount > 0 else 0
     return {"id": budget.id, "category": budget.category, "limit_amount": budget.limit_amount,
             "spent_amount": round(spent, 2), "month_year": budget.month_year, "percentage": pct,
-            "status": "exceeded" if pct >= 100 else "warning" if pct >= 80 else "ok"}
+            "status": "exceeded" if pct >= 100 else "warning" if pct >= 70 else "ok"}
 
 
 @router.delete("/{budget_id}")

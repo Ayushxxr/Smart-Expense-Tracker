@@ -9,46 +9,22 @@ import {
   TrendingDown, Hash, Tag, Calendar, ChevronLeft, ChevronRight,
   UtensilsCrossed, Car, ShoppingBag, Film, Zap, Stethoscope, 
   GraduationCap, Plane, TrendingUp, Box, History, LayoutDashboard,
-  Wallet, Pencil, CircleDollarSign
+  Wallet, Pencil, CircleDollarSign, ArrowRight, Plus
 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../api/client'
+import { useNavigate } from 'react-router-dom'
 
-const CATEGORY_COLORS = {
-  'Food & Dining': '#f97316',
-  'Transport':     '#3b82f6',
-  'Shopping':      '#eab308',
-  'Entertainment': '#a855f7',
-  'Bills & Utilities': '#0ea5e9',
-  'Healthcare':    '#ef4444',
-  'Education':     '#14b8a6',
-  'Travel':        '#f43f5e',
-  'Investments':   '#22c55e',
-  'Other':         '#6b7280'
-}
+import * as Icons from 'lucide-react'
+import { categoryService } from '../api/categoryService'
+import AddExpenseModal from '../components/AddExpenseModal'
 
-const CATEGORY_ICONS = {
-  'Food & Dining': UtensilsCrossed,
-  'Transport':     Car,
-  'Shopping':      ShoppingBag,
-  'Entertainment': Film,
-  'Bills & Utilities': Zap,
-  'Healthcare':    Stethoscope,
-  'Education':     GraduationCap,
-  'Travel':        Plane,
-  'Investments':   TrendingUp,
-  'Other':         Box
-}
-
-const CATEGORY_EMOJI = {
-  'Food & Dining': '🍔', 'Transport': '🚗', 'Shopping': '🛍️',
-  'Entertainment': '🎬', 'Bills & Utilities': '💡', 'Healthcare': '💊',
-  'Education': '📚', 'Travel': '✈️', 'Investments': '📈', 'Other': '📦'
-}
+const CATEGORY_FALLBACK_COLOR = '#6b7280'
+const CATEGORY_FALLBACK_ICON = Icons.MoreHorizontal
 
 function fmt(n) { 
   return (
-    <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.5px' }}>
+    <span className="amount" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.5px' }}>
       ₹{Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
     </span>
   )
@@ -69,8 +45,8 @@ function MonthPickerModal({ value, onChange, onClose }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000, position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="modal" style={{ maxWidth: 320, padding: '24px', background: 'var(--surface)', borderRadius: 24, border: '1px solid var(--border2)', boxShadow: 'var(--shadow-lg)' }} onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
+      <div className="modal" style={{ maxWidth: 320, padding: '24px' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <button className="arrow-btn" onClick={() => setViewYear(v => v - 1)}>
             <ChevronLeft size={20} />
@@ -94,7 +70,7 @@ function MonthPickerModal({ value, onChange, onClose }) {
                   height: 48,
                   borderRadius: 12,
                   border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
-                  background: isSelected ? 'rgba(132, 101, 255, 0.15)' : 'rgba(255,255,255,0.02)',
+                  background: isSelected ? 'rgba(var(--accent-rgb), 0.15)' : 'var(--bg3)',
                   color: isSelected ? 'var(--accent)' : 'var(--text2)',
                   fontSize: 13,
                   fontWeight: isSelected ? 800 : 600,
@@ -116,6 +92,62 @@ function MonthPickerModal({ value, onChange, onClose }) {
         >
           Close
         </button>
+      </div>
+    </div>
+  )
+}
+
+function SpentDetailModal({ summary, breakdown, onClose, navigate }) {
+  const top3 = (breakdown?.breakdown || []).slice(0, 3)
+  const fmtVal = (v) => Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })
+
+  return (
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
+      <div className="modal" style={{ maxWidth: 360, width: '90%', padding: '24px' }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(var(--accent-rgb), 0.15)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+             <TrendingDown size={20} strokeWidth={2.5} />
+           </div>
+           <button onClick={onClose} style={{ border: 'none', background: 'none', color: 'var(--text3)', cursor: 'pointer' }}><Icons.X size={18} /></button>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>TOTAL SPENT</div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--text)', letterSpacing: '-1px' }}>₹{fmtVal(summary?.total_spent)}</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: summary?.change_percentage > 0 ? 'var(--red)' : 'var(--green)', marginTop: 4 }}>
+            {summary?.change_percentage > 0 ? '↑' : '↓'} ₹{Math.abs(summary?.total_spent - (summary?.previous_month_spent || 0)).toLocaleString('en-IN')} vs last month
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12 }}>Top Categories</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {top3.map((cat, i) => (
+              <div key={cat.category} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: `var(--accent${(i % 3) + 1})` }} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text2)' }}>{cat.category}</span>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>₹{fmtVal(cat.amount)}</span>
+              </div>
+            ))}
+          </div>
+          <button 
+            onClick={() => { navigate('/categories'); onClose(); }}
+            style={{ marginTop: 16, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}
+          >
+            View all categories <ArrowRight size={14} />
+          </button>
+        </div>
+
+        <div style={{ padding: '14px 16px', background: 'var(--bg3)', borderRadius: 16, border: '1px solid var(--border)' }}>
+           <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 4 }}>Spending Summary</div>
+           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)', lineHeight: 1.4 }}>
+             {summary?.top_category 
+               ? `Most spending was on ${summary.top_category} this month.`
+               : "Your spending is well-distributed this month."}
+           </div>
+        </div>
       </div>
     </div>
   )
@@ -192,9 +224,12 @@ function MonthNavigator({ value, onChange }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'))
   const [activeIndex, setActiveIndex] = useState(-1)
   const [showSalaryModal, setShowSalaryModal] = useState(false)
+  const [showSpentModal, setShowSpentModal] = useState(false)
+  const [showAdd, setShowAdd] = useState(false)
   const [salaryInput, setSalaryInput] = useState('')
   const qc = useQueryClient()
 
@@ -210,6 +245,12 @@ export default function Dashboard() {
     queryKey: ['breakdown', month],
     queryFn: () => api.get(`/api/dashboard/breakdown?month=${month}`).then(r => r.data),
   })
+  const { data: catData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: categoryService.getCategories
+  })
+  const categories = catData || []
+
   const { data: recentData } = useQuery({
     queryKey: ['recent-expenses'],
     queryFn: () => api.get('/api/expenses?page=1&per_page=5').then(r => r.data),
@@ -279,54 +320,118 @@ export default function Dashboard() {
       </div>
 
       <div className="page-body">
+        {(!summary && !loading) && (
+          <div className="empty-state" style={{ padding: '80px 0' }}>
+            <div className="empty-state-icon">⚠️</div>
+            <p>Could not load dashboard data. Please try refreshing.</p>
+          </div>
+        )}
+        
         {/* Stat Cards */}
         <div className="stat-grid">
           {/* 1. Available Balance Card [NEW] */}
           {!isAllTime && (
             <div className="stat-card stagger-item" style={{ 
               animationDelay: '0.05s',
+              padding: '10px 14px',
               border: !loading && summary?.total_spent > summary?.monthly_income 
-                ? '1px solid rgba(255,107,107,0.3)' 
+                ? '1px solid rgba(var(--red-rgb), 0.3)' 
                 : '1px solid var(--border)'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 2 }}>
                 <div className="stat-icon" style={{ 
-                  background: !loading && summary?.total_spent > summary?.monthly_income ? 'rgba(255,107,107,0.1)' : 'rgba(74,222,128,0.1)'
+                  background: !loading && summary?.total_spent > summary?.monthly_income ? 'rgba(var(--red-rgb), 0.1)' : 'rgba(var(--green-rgb), 0.1)',
+                  width: 28, height: 28
                 }}>
-                  <Wallet size={20} strokeWidth={1.8} color={!loading && summary?.total_spent > summary?.monthly_income ? 'var(--red)' : 'var(--green)'} />
+                  <Wallet size={14} strokeWidth={1.8} color={!loading && summary?.total_spent > summary?.monthly_income ? 'var(--red)' : 'var(--green)'} />
                 </div>
                 <button 
                   onClick={openSalaryModal}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text3)', padding: 4, borderRadius: 6, cursor: 'pointer' }}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text3)', padding: 1, borderRadius: 6, cursor: 'pointer' }}
                   title="Update Salary"
                 >
-                  <Pencil size={14} />
+                  <Pencil size={11} />
                 </button>
               </div>
-              <div className="stat-label">Available Balance</div>
-              <div className="stat-value" style={{ 
-                color: !loading && summary?.total_spent > (summary?.monthly_income * 0.9) ? 'var(--red)' : 'var(--text)' 
-              }}>
-                {loading ? <div className="skeleton" style={{ height: 28, width: 100, borderRadius: 8 }} /> : fmt(summary?.monthly_income - summary?.total_spent)}
+              <div className="stat-label" style={{ marginBottom: 0 }}>MONTHLY INCOME</div>
+              <div className="stat-value" style={{ fontSize: 20, fontWeight: 900 }}>
+                {loading ? <div className="skeleton" style={{ height: 24, width: 90, borderRadius: 8 }} /> : fmt(summary?.monthly_income)}
               </div>
-              <div className="stat-change" style={{ color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <CircleDollarSign size={12} />
-                {loading ? '...' : `Limit: ${summary?.suggested_daily_limit || 0}/day`}
+              
+              <div style={{ 
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                marginTop: 6, padding: '8px 10px 10px 10px', background: 'var(--bg2)', 
+                borderRadius: 10, border: '1px solid var(--border)',
+                position: 'relative', overflow: 'hidden'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  <div style={{ fontSize: 7, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>REMAINING</div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: 'var(--accent)', letterSpacing: '-0.3px' }}>
+                    ₹{Math.round(summary?.monthly_income - summary?.total_spent).toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  <div style={{ 
+                    fontSize: 12, fontWeight: 900, 
+                    color: (summary?.total_spent / (summary?.monthly_income || 1)) > 1 ? 'var(--red)' : 'var(--text)',
+                    lineHeight: 1
+                  }}>
+                    {Math.round((summary?.total_spent / (summary?.monthly_income || 1)) * 100)}%
+                  </div>
+                  <div style={{ fontSize: 6.5, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.2px', marginTop: 1 }}>used</div>
+                </div>
+
+                {/* Zero-height impact Progress Bar */}
+                <div style={{ 
+                  position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, 
+                  background: 'var(--border)' 
+                }}>
+                  <div style={{ 
+                    height: '100%', 
+                    width: `${Math.min((summary?.total_spent / (summary?.monthly_income || 1)) * 100, 100)}%`,
+                    background: (summary?.total_spent / (summary?.monthly_income || 1)) > 0.9 ? 'var(--red)' : 'var(--accent)',
+                    transition: 'width 1s ease-out'
+                  }} />
+                </div>
               </div>
             </div>
           )}
 
-          <div className="stat-card stagger-item" style={{ animationDelay: '0.1s' }}>
-            <div className="stat-icon"><TrendingDown size={20} strokeWidth={1.8} color="var(--accent)" /></div>
-            <div className="stat-label">Total Spent</div>
-            <div className="stat-value">
-              {loading ? <div className="skeleton" style={{ height: 28, width: 100, borderRadius: 8 }} /> : fmt(summary?.total_spent)}
+          <div className="stat-card stagger-item clickable-card" style={{ 
+            animationDelay: '0.1s', 
+            padding: '10px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            cursor: 'pointer'
+          }} onClick={() => setShowSpentModal(true)}>
+            <div className="stat-icon" style={{ width: 28, height: 28, marginBottom: 2 }}>
+              <TrendingDown size={14} strokeWidth={1.8} color="var(--accent)" />
             </div>
-            <div className={`stat-change ${changeClass}`}>
-              {isAllTime ? 'Across all months' : `${changeIcon} ${Math.abs(summary?.change_percentage || 0)}% vs last month`}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+              <div className="stat-label" style={{ marginBottom: 0 }}>TOTAL SPENT</div>
+              <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--accent3)', boxShadow: '0 0 4px var(--accent3)' }} />
+                Synced
+              </div>
+            </div>
+            <div className="stat-value" style={{ fontSize: 20, fontWeight: 900 }}>
+              {loading ? <div className="skeleton" style={{ height: 24, width: 90, borderRadius: 8 }} /> : fmt(summary?.total_spent)}
+            </div>
+            <div className={`stat-change ${changeClass}`} style={{ marginTop: 6, fontSize: 10, fontWeight: 700 }}>
+              {isAllTime ? 'Total' : (
+                summary?.change_percentage === 0 ? 'No change' : (
+                  Math.abs(summary?.change_percentage || 0) > 100 
+                    ? `${changeIcon} ₹${Math.abs((summary?.total_spent || 0) - (summary?.previous_month_spent || 0)).toLocaleString('en-IN', { maximumFractionDigits: 0 })} vs ${format(subMonths(new Date((month?.includes('-') ? month : format(new Date(), 'yyyy-MM')) + '-01'), 1), 'MMM')}`
+                    : `${changeIcon} ${Math.abs(summary?.change_percentage || 0)}% vs last month`
+                )
+              )}
             </div>
           </div>
-          <div className="stat-card stagger-item" style={{ animationDelay: '0.2s' }}>
+          <div 
+            className="stat-card stagger-item clickable-card" 
+            style={{ animationDelay: '0.2s', cursor: 'pointer' }}
+            onClick={() => navigate('/expenses')}
+          >
             <div className="stat-icon"><Hash size={20} strokeWidth={1.8} color="var(--accent2)" /></div>
             <div className="stat-label">Transactions</div>
             <div className="stat-value">
@@ -335,29 +440,37 @@ export default function Dashboard() {
                 : <span style={{ fontFamily: 'var(--font-mono)' }}>{summary?.transaction_count || 0}</span>
               }
             </div>
-            <div className="stat-change" style={{ color: 'var(--text3)' }}>{isAllTime ? 'Account lifetime' : 'This month'}</div>
+            <div className="stat-change" style={{ color: 'var(--text3)' }}>
+              {isAllTime ? 'Account lifetime' : (
+                summary?.previous_month_transaction_count !== undefined ? (
+                  (() => {
+                    const count = summary?.transaction_count || 0
+                    const prevCount = summary?.previous_month_transaction_count || 0
+                    const diff = count - prevCount
+                    if (diff === 0) return 'Same as last month'
+                    return `${diff > 0 ? '+' : '-'}${Math.abs(diff)} from last month`
+                  })()
+                ) : 'This month'
+              )}
+            </div>
           </div>
-          <div className="stat-card stagger-item" style={{ animationDelay: '0.3s' }}>
+          <div 
+            className="stat-card stagger-item clickable-card" 
+            style={{ animationDelay: '0.3s', cursor: 'pointer' }}
+            onClick={() => summary?.top_category && navigate(`/category-details?name=${encodeURIComponent(summary.top_category)}`)}
+          >
             <div className="stat-icon"><Tag size={20} strokeWidth={1.8} color="var(--accent3)" /></div>
             <div className="stat-label">Top Category</div>
             <div className="stat-value" style={{ fontSize: 16, paddingTop: 4, fontWeight: 700 }}>
               {loading ? <div className="skeleton" style={{ height: 24, width: 120, borderRadius: 6 }} /> : (summary?.top_category || '—')}
+              {!loading && summary?.top_category && summary?.by_category && (
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent3)', marginLeft: 8 }}>
+                  ({Math.round(((summary?.by_category?.[summary?.top_category] || 0) / (summary?.total_spent || 1)) * 100)}%)
+                </span>
+              )}
             </div>
             <div className="stat-change" style={{ color: 'var(--text3)' }}>
-              {summary?.top_category ? fmt(summary?.by_category?.[summary.top_category]) : ''}
-            </div>
-          </div>
-          <div className="stat-card stagger-item" style={{ animationDelay: '0.4s' }}>
-            <div className="stat-icon"><Calendar size={20} strokeWidth={1.8} color="var(--text3)" /></div>
-            <div className="stat-label">{isAllTime ? 'Monthly Avg' : 'Prev. Month'}</div>
-            <div className="stat-value">
-              {loading ? <div className="skeleton" style={{ height: 28, width: 100, borderRadius: 8 }} /> : (isAllTime 
-                ? fmt(summary?.total_spent / (trendData.length || 1)) 
-                : fmt(summary?.previous_month_spent))
-              }
-            </div>
-            <div className="stat-change" style={{ color: 'var(--text3)' }}>
-              {isAllTime ? 'Estimated average' : format(subMonths(new Date(month + '-01'), 1), 'MMM yyyy')}
+              {summary?.top_category ? `You spent most on ${summary.top_category}` : 'No spending data yet'}
             </div>
           </div>
         </div>
@@ -370,9 +483,9 @@ export default function Dashboard() {
                 {isAllTime ? 'Monthly Spending Growth' : 'Daily Spending Trend'}
               </div>
               {loading ? (
-                <div className="skeleton" style={{ height: 220, width: '100%', borderRadius: 16, marginTop: 10 }} />
+                <div className="skeleton" style={{ height: 200, width: '100%', borderRadius: 16, marginTop: 10 }} />
               ) : trendData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={trendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <defs>
                       <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
@@ -380,7 +493,7 @@ export default function Dashboard() {
                         <stop offset="100%" stopColor="var(--accent)" stopOpacity={0.4}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                     <XAxis 
                       dataKey="date" 
                       tick={{ fill: 'var(--text3)', fontSize: 10, fontWeight: 500, fontFamily: 'var(--font-mono)' }} 
@@ -399,13 +512,13 @@ export default function Dashboard() {
                         fontFamily: 'var(--font-mono)'
                       }} 
                       dx={-50}
-                      tickFormatter={(v) => `₹${Number(v).toLocaleString('en-IN')}`}
+                      tickFormatter={(v) => `₹${Number(v).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
                     />
                     <Tooltip
                       contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 12, color: 'var(--text)', fontSize: 12, pointerEvents: 'none' }}
                       itemStyle={{ pointerEvents: 'none', fontFamily: 'var(--font-mono)' }}
-                      formatter={v => [`₹${Number(v).toLocaleString('en-IN')}`, 'Spent']}
-                      cursor={{ fill: 'rgba(132, 101, 255, 0.08)', radius: 4 }}
+                      formatter={v => [`₹${Number(v).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, 'Spent']}
+                      cursor={{ fill: 'rgba(var(--accent-rgb), 0.08)', radius: 4 }}
                     />
                     <Bar
                       dataKey="amount"
@@ -434,7 +547,7 @@ export default function Dashboard() {
             ) : pieData.length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24 }}>
                 {/* 1. The Donut Chart */}
-                <div style={{ height: 200, position: 'relative' }}>
+                <div style={{ height: 180, position: 'relative' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -450,19 +563,22 @@ export default function Dashboard() {
                         onClick={(_, index) => setActiveIndex(index)}
                         activeIndex={activeIndex}
                       >
-                        {pieData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={CATEGORY_COLORS[entry.category] || '#7c5cff'} 
-                            stroke={activeIndex === index ? 'rgba(255,255,255,0.8)' : 'none'}
-                            strokeWidth={3}
-                            style={{ 
-                              outline: 'none', 
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease-out'
-                            }}
-                          />
-                        ))}
+                        {pieData.map((entry, index) => {
+                          const catInfo = categories.find(c => c.name === entry.category)
+                          return (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={catInfo?.color || CATEGORY_FALLBACK_COLOR} 
+                              stroke={activeIndex === index ? 'var(--text)' : 'none'}
+                              strokeWidth={3}
+                              style={{ 
+                                outline: 'none', 
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease-out'
+                              }}
+                            />
+                          )
+                        })}
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
@@ -483,13 +599,13 @@ export default function Dashboard() {
                       <>
                         <div style={{ 
                           fontSize: 11, fontWeight: 800, 
-                          color: CATEGORY_COLORS[pieData[activeIndex]?.category] || '#7c5cff', 
+                          color: categories.find(c => c.name === pieData[activeIndex]?.category)?.color || CATEGORY_FALLBACK_COLOR, 
                           textTransform: 'uppercase', letterSpacing: 0.5,
                           maxWidth: '80%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                         }}>
                           {pieData[activeIndex]?.category}
                         </div>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginTop: -2 }}>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginTop: -2 }}>
                           {fmt(pieData[activeIndex]?.amount)}
                         </div>
                         <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)' }}>
@@ -514,7 +630,7 @@ export default function Dashboard() {
                 }}>
                   <Zap size={16} color="var(--yellow)" />
                   <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500 }}>
-                    You spent most on <span style={{ color: CATEGORY_COLORS[pieData[0]?.category] || '#7c5cff', fontWeight: 700 }}>{pieData[0]?.category}</span> ({pieData[0]?.percentage}%)
+                    You spent most on <span style={{ color: categories.find(c => c.name === pieData[0]?.category)?.color || CATEGORY_FALLBACK_COLOR, fontWeight: 700 }}>{pieData[0]?.category}</span> ({pieData[0]?.percentage}%)
                   </div>
                 </div>
 
@@ -529,24 +645,25 @@ export default function Dashboard() {
                         gridTemplateColumns: 'auto auto auto 1fr auto auto', 
                         alignItems: 'center', 
                         padding: '10px 0',
-                        borderBottom: '1px solid rgba(255,255,255,0.03)',
+                        borderBottom: '1px solid var(--border)',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
-                        background: activeIndex === i ? 'rgba(255,255,255,0.03)' : 'transparent',
+                        background: activeIndex === i ? 'rgba(var(--accent-rgb), 0.05)' : 'transparent',
                         borderRadius: 4
                       }}>
                       <div style={{ 
                         width: 6, height: 6, borderRadius: '50%', flexShrink: 0, marginLeft: 4,
-                        background: CATEGORY_COLORS[cat.category] || '#7c5cff'
+                        background: categories.find(c => c.name === cat.category)?.color || CATEGORY_FALLBACK_COLOR
                       }} />
                       <span style={{ fontSize: 16, marginLeft: 10, marginRight: 10, color: 'var(--text2)' }}>
                         {(() => {
-                          const IconComp = CATEGORY_ICONS[cat.category] || Box
+                          const catInfo = categories.find(c => c.name === cat.category)
+                          const IconComp = Icons[catInfo?.icon] || CATEGORY_FALLBACK_ICON
                           return <IconComp size={16} strokeWidth={1.8} />
                         })()}
                       </span>
                       <div style={{ 
-                        fontSize: 12, fontWeight: 700, color: '#ffffff',
+                        fontSize: 12, fontWeight: 700, color: 'var(--text)',
                         wordBreak: 'break-word', lineHeight: 1.2
                       }}>
                         {cat.category}
@@ -589,10 +706,11 @@ export default function Dashboard() {
             <div className="insight-list">
               {pieData.map((cat, i) => (
                 <div key={cat.category} className="insight-row">
-                  <div className="insight-dot" style={{ background: CATEGORY_COLORS[cat.category] || '#7c5cff' }} />
+                  <div className="insight-dot" style={{ background: categories.find(c => c.name === cat.category)?.color || CATEGORY_FALLBACK_COLOR }} />
                   <span style={{ fontSize: 16, flexShrink: 0, color: 'var(--text2)' }}>
                     {(() => {
-                      const IconComp = CATEGORY_ICONS[cat.category] || Box
+                      const catInfo = categories.find(c => c.name === cat.category)
+                      const IconComp = Icons[catInfo?.icon] || CATEGORY_FALLBACK_ICON
                       return <IconComp size={18} strokeWidth={1.8} />
                     })()}
                   </span>
@@ -612,7 +730,9 @@ export default function Dashboard() {
               <History size={14} />
               Recent Transactions
             </div>
-            <a href="/expenses" style={{ fontSize: 12, color: 'var(--accent3)', cursor: 'pointer' }}>View all →</a>
+            <a href="/expenses" className="view-all-link" style={{ fontSize: 12, color: 'var(--accent3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+              View all <ArrowRight size={14} />
+            </a>
           </div>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -629,8 +749,8 @@ export default function Dashboard() {
             </div>
           ) : recentExpenses.length === 0 ? (
             <div className="empty-state" style={{ padding: '30px 0' }}>
-              <div className="empty-state-icon">🧾</div>
-              <p>No transactions yet. <a href="/expenses" style={{ color: 'var(--accent3)' }}>Add your first expense</a></p>
+              <div className="empty-state-icon">📝</div>
+              <p>No transactions yet — start by adding your first expense</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -645,7 +765,8 @@ export default function Dashboard() {
                     justifyContent: 'center', color: 'var(--text2)'
                   }}>
                     {(() => {
-                      const IconComp = CATEGORY_ICONS[exp.category] || Box
+                      const catInfo = categories.find(c => c.name === exp.category)
+                      const IconComp = Icons[catInfo?.icon] || CATEGORY_FALLBACK_ICON
                       return <IconComp size={18} strokeWidth={1.8} />
                     })()}
                   </div>
@@ -678,10 +799,10 @@ export default function Dashboard() {
       {showSalaryModal && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 1000,
-          display: 'flex', alignItems: 'center', justify_content: 'center',
-          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)'
         }}>
-          <div className="card" style={{ 
+          <div className="modal" style={{ 
             width: '90%', maxWidth: 400, padding: 32, 
             background: 'var(--surface)', border: '1px solid var(--border2)',
             boxShadow: 'var(--shadow-lg)'
@@ -691,7 +812,7 @@ export default function Dashboard() {
             </div>
             <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Update Monthly Income</h3>
             <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 24 }}>
-              Set your expected earnings this month to track your available balance and daily limits.
+              Set your expected earnings this month to track your available spending and daily limits.
             </p>
             
             <form onSubmit={handleUpdateSalary}>
@@ -711,8 +832,8 @@ export default function Dashboard() {
               <div style={{ display: 'flex', gap: 12 }}>
                 <button 
                   type="button" 
-                  className="btn" 
-                  style={{ flex: 1, background: 'var(--bg3)', borderRadius: 12 }}
+                  className="btn btn-secondary" 
+                  style={{ flex: 1, borderRadius: 12 }}
                   onClick={() => setShowSalaryModal(false)}
                 >
                   Cancel
@@ -730,6 +851,17 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {showSpentModal && (
+        <SpentDetailModal 
+          summary={summary} 
+          breakdown={breakdown} 
+          onClose={() => setShowSpentModal(false)} 
+          navigate={navigate}
+        />
+      )}
+      {showAdd && <AddExpenseModal onClose={() => setShowAdd(false)} />}
+      <button className="expense-fab" onClick={() => setShowAdd(true)}><Plus size={24} strokeWidth={3} /></button>
     </div>
   )
 }

@@ -16,17 +16,23 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 @router.get("/summary")
 def get_summary(
     month: str = None,  # "YYYY-MM" or "all"
+    start_date: date = None,
+    end_date: date = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     query = db.query(Expense).filter(Expense.user_id == current_user.id)
     
     if month and month != "all":
-        year, m = map(int, month.split("-"))
+        y, m = map(int, month.split("-"))
         query = query.filter(
-            extract("year", Expense.expense_date) == year,
+            extract("year", Expense.expense_date) == y,
             extract("month", Expense.expense_date) == m
         )
+    if start_date:
+        query = query.filter(Expense.expense_date >= start_date)
+    if end_date:
+        query = query.filter(Expense.expense_date <= end_date)
     
     expenses = query.all()
     total_spent = sum(e.amount for e in expenses)
@@ -36,20 +42,32 @@ def get_summary(
 
     # Previous month comparison (skip if "all")
     prev_expenses = 0
+    prev_count = 0
     change_pct = 0
     if month != "all":
         today = date.today()
         if month:
-            year, m = map(int, month.split("-"))
+            try:
+                year, m = map(int, month.split("-"))
+            except ValueError:
+                year, m = today.year, today.month
         else:
             year, m = today.year, today.month
             
         prev_m, prev_y = (m - 1, year) if m > 1 else (12, year - 1)
-        prev_expenses = db.query(func.sum(Expense.amount)).filter(
+        
+        # Stats for comparison
+        prev_data = db.query(
+            func.sum(Expense.amount).label("spent"),
+            func.count(Expense.id).label("count")
+        ).filter(
             Expense.user_id == current_user.id,
             extract("year", Expense.expense_date) == prev_y,
             extract("month", Expense.expense_date) == prev_m
-        ).scalar() or 0
+        ).first()
+        
+        prev_expenses = prev_data.spent or 0
+        prev_count = prev_data.count or 0
         change_pct = round(((total_spent - prev_expenses) / prev_expenses * 100) if prev_expenses > 0 else 0, 1)
 
     # Calculate days for burn-rate (only if month is current or not "all")
@@ -74,7 +92,8 @@ def get_summary(
             days_remaining = 0 # past month
             
         if days_remaining > 0:
-            remaining_balance = current_user.monthly_income - total_spent
+            income = current_user.monthly_income or 50000
+            remaining_balance = income - total_spent
             suggested_daily = round(max(0, remaining_balance / days_remaining), 2)
 
     return {
@@ -82,10 +101,11 @@ def get_summary(
         "total_spent": round(total_spent, 2),
         "transaction_count": len(expenses),
         "previous_month_spent": round(prev_expenses, 2),
+        "previous_month_transaction_count": prev_count,
         "change_percentage": change_pct,
         "by_category": dict(by_category),
         "top_category": max(by_category, key=by_category.get) if by_category else None,
-        "monthly_income": current_user.monthly_income,
+        "monthly_income": current_user.monthly_income or 50000,
         "suggested_daily_limit": suggested_daily,
         "days_remaining": days_remaining
     }
@@ -110,15 +130,14 @@ def get_trend(
     
     # Group by day for single month view
     today = date.today()
-    if month:
-        year, m = map(int, month.split("-"))
+    if month and month != "all":
+        y, m = map(int, month.split("-"))
+        expenses = query.filter(
+            extract("year", Expense.expense_date) == y,
+            extract("month", Expense.expense_date) == m
+        ).order_by(Expense.expense_date).all()
     else:
-        year, m = today.year, today.month
-
-    expenses = query.filter(
-        extract("year", Expense.expense_date) == year,
-        extract("month", Expense.expense_date) == m
-    ).order_by(Expense.expense_date).all()
+        expenses = query.order_by(Expense.expense_date).all()
 
     daily = defaultdict(float)
     for e in expenses:
@@ -130,17 +149,23 @@ def get_trend(
 @router.get("/breakdown")
 def get_breakdown(
     month: str = None,
+    start_date: date = None,
+    end_date: date = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     query = db.query(Expense).filter(Expense.user_id == current_user.id)
     
     if month and month != "all":
-        year, m = map(int, month.split("-"))
+        y, m = map(int, month.split("-"))
         query = query.filter(
-            extract("year", Expense.expense_date) == year,
+            extract("year", Expense.expense_date) == y,
             extract("month", Expense.expense_date) == m
         )
+    if start_date:
+        query = query.filter(Expense.expense_date >= start_date)
+    if end_date:
+        query = query.filter(Expense.expense_date <= end_date)
     
     expenses = query.all()
     total = sum(e.amount for e in expenses) or 1

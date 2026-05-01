@@ -1,1 +1,1 @@
-from app.api import auth, expenses, dashboard, budgets, chat, ocr, insights
+from app.api import auth, expenses, dashboard, budgets, chat, ocr, insights, categories

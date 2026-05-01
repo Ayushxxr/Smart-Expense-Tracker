@@ -1,165 +1,211 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
-import useAuthStore from '../store/authStore'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { 
+  User, Mail, Wallet, ShieldCheck, Heart, 
+  TrendingUp, Activity, Edit3, Save, CheckCircle2,
+  AlertCircle, Trophy, Target, ArrowRight
+} from 'lucide-react'
 import api from '../api/client'
+import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
-import { useNavigate } from 'react-router-dom'
-import { format } from 'date-fns'
-import { User, Mail, Wallet, Download, LogOut, ShieldCheck, Heart } from 'lucide-react'
 
 export default function Profile() {
-  const { user, setAuth, logout } = useAuthStore()
-  const navigate = useNavigate()
-
+  const { user, setAuth } = useAuthStore()
+  const qc = useQueryClient()
+  const [isEditing, setIsEditing] = useState(false)
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    monthly_income: user?.monthly_income || '',
+    monthly_income: user?.monthly_income || ''
   })
 
-  const { data: health } = useQuery({
-    queryKey: ['health'],
-    queryFn: () => api.get('/api/insights/health').then(r => r.data),
+  const { data: summary } = useQuery({
+    queryKey: ['summary', 'all'],
+    queryFn: () => api.get('/api/dashboard/summary?month=all').then(res => res.data)
   })
 
   const updateMutation = useMutation({
     mutationFn: (data) => api.put('/api/auth/me', data),
-    onSuccess: ({ data }) => {
-      setAuth(data.user, data.access_token || localStorage.getItem('access_token'))
-      toast.success('Profile updated')
+    onSuccess: (res) => {
+      setAuth(res.data, localStorage.getItem('access_token'))
+      setIsEditing(false)
+      toast.success('Profile updated! ✨')
+      qc.invalidateQueries(['summary'])
     },
-    onError: err => toast.error(err.response?.data?.detail || 'Update failed')
+    onError: () => toast.error('Failed to update profile')
   })
 
-  const handleLogout = () => {
-    logout()
-    toast.success('Logged out successfully')
-    navigate('/login')
+  // Calculate Financial Health Score
+  const getHealth = () => {
+    if (!summary) return { score: 0, grade: 'Loading...', color: 'var(--text3)' }
+    const spent = summary.total_spent || 0
+    const income = summary.monthly_income || 1
+    const ratio = spent / income
+    
+    let score = 100 - (ratio * 100)
+    if (score < 0) score = 0
+    if (score > 100) score = 100
+    score = Math.round(score)
+
+    if (score >= 80) return { score, grade: 'Excellent', color: 'var(--green)', desc: 'You are a financial master!' }
+    if (score >= 60) return { score, grade: 'Good', color: '#3b82f6', desc: 'Solid tracking habits.' }
+    if (score >= 40) return { score, grade: 'Fair', color: '#f59e0b', desc: 'Room for optimization.' }
+    return { score, grade: 'Poor', color: 'var(--red)', desc: 'Budget needs attention.' }
   }
 
-  const handleExport = async () => {
-    try {
-      toast('Preparing export...', { icon: <Download size={16} color="var(--accent)" /> })
-      const response = await api.get('/api/expenses/export', { responseType: 'blob' })
-      const url = URL.createObjectURL(new Blob([response.data], { type: 'text/csv' }))
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `expenses_${format(new Date(), 'yyyy-MM-dd')}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
-      toast.success('Export downloaded!')
-    } catch {
-      toast.error('Export failed')
-    }
+  const health = getHealth()
+
+  const getInitials = (name) => {
+    if (!name) return '?'
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
   }
 
-  const score = health?.score || 0
-  const grade = health?.grade || '—'
-  const scoreColor = score >= 80 ? '#4ade80' : score >= 60 ? '#facc15' : score >= 40 ? '#f97316' : '#f87171'
+  const Section = ({ title, icon: Icon, children }) => (
+    <div className="card stagger-item" style={{ marginBottom: 24, borderRadius: 28, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <div style={{ 
+          width: 32, height: 32, borderRadius: 10, background: 'var(--accent)10', 
+          color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' 
+        }}>
+          <Icon size={18} />
+        </div>
+        <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>{title}</h3>
+      </div>
+      {children}
+    </div>
+  )
 
   return (
-    <div>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Profile</h1>
-          <p className="page-sub">Manage your account</p>
+    <div className="page-container" style={{ paddingBottom: 100 }}>
+      {/* 1. User Identity Header */}
+      <div className="stagger-item" style={{ 
+        textAlign: 'center', marginBottom: 40, marginTop: 20 
+      }}>
+        <div style={{ 
+          width: 100, height: 100, borderRadius: '50%', margin: '0 auto 20px',
+          background: 'linear-gradient(135deg, var(--bg2), var(--bg3))',
+          border: '4px solid var(--accent)', display: 'flex', alignItems: 'center', 
+          justifyContent: 'center', color: 'var(--accent)', fontSize: 36, fontWeight: 900,
+          boxShadow: '0 10px 30px rgba(108, 99, 255, 0.3)'
+        }}>
+          {getInitials(user?.name)}
         </div>
+        <h1 style={{ fontSize: 28, fontWeight: 800, margin: '0 0 4px' }}>{user?.name}</h1>
+        <p style={{ color: 'var(--text3)', fontSize: 14, margin: 0 }}>{user?.email}</p>
       </div>
 
-      <div className="page-body">
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'clamp(260px, 33%, 340px) 1fr',
-          gap: 24, alignItems: 'start'
-        }} className="profile-grid">
-
-          {/* Left: Avatar + Stats */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div className="card" style={{ textAlign: 'center', padding: '32px 24px' }}>
-              <div style={{
-                width: 80, height: 80, borderRadius: '50%', margin: '0 auto 16px',
-                background: 'var(--accent)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 32, fontWeight: 800, color: '#fff'
-              }}>
-                {user?.name?.[0]?.toUpperCase() || '?'}
-              </div>
-              <div style={{ fontWeight: 700, fontSize: 20, color: 'var(--text)' }}>{user?.name}</div>
-              <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20 }}>{user?.email}</div>
-
-              {/* Score ring (simple bar) */}
-              <div style={{ background: 'var(--bg3)', borderRadius: 12, padding: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, color: 'var(--text3)' }}>Financial Health</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: scoreColor }}>{score}/100</span>
-                </div>
-                <div style={{ height: 8, background: 'var(--bg2)', borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${score}%`, background: scoreColor, borderRadius: 99, transition: 'width 1s ease' }} />
-                </div>
-                <div style={{ marginTop: 8, fontSize: 13, color: scoreColor, fontWeight: 600, textAlign: 'center' }}>
-                  Grade: {grade}
-                </div>
-              </div>
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+        
+        {/* 2. Financial Health (USP) */}
+        <Section title="Financial Health" icon={Activity}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 24, 
+            background: 'var(--bg2)', padding: 24, borderRadius: 20,
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ position: 'relative', width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+               <svg style={{ transform: 'rotate(-90deg)', width: 80, height: 80 }}>
+                  <circle cx="40" cy="40" r="36" fill="none" stroke="var(--bg3)" strokeWidth="8" />
+                  <circle cx="40" cy="40" r="36" fill="none" stroke={health.color} strokeWidth="8" 
+                    strokeDasharray={2 * Math.PI * 36}
+                    strokeDashoffset={2 * Math.PI * 36 * (1 - health.score / 100)}
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 1s ease' }}
+                  />
+               </svg>
+               <div style={{ position: 'absolute', fontSize: 18, fontWeight: 900, color: health.color }}>
+                 {health.score}
+               </div>
             </div>
-
-            {/* Quick stats */}
-            <div className="card" style={{ padding: '20px 24px' }}>
-              <div className="card-title">📊 This Month</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text3)', fontSize: 13 }}>Total Spent</span>
-                  <span style={{ fontWeight: 700, color: 'var(--text)' }}>
-                    ₹{(health?.total_spent_this_month || 0).toLocaleString('en-IN')}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text3)', fontSize: 13 }}>Transactions</span>
-                  <span style={{ fontWeight: 700, color: 'var(--text)' }}>{health?.transaction_count || 0}</span>
-                </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 800, color: health.color }}>{health.grade}</span>
+                <CheckCircle2 size={16} color={health.color} />
               </div>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text3)' }}>{health.desc}</p>
             </div>
+            <Trophy size={32} color="var(--accent)" style={{ opacity: 0.3 }} />
+          </div>
+        </Section>
 
-            {/* Actions */}
-            <div className="card" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleExport}>
-                📥 Export CSV
-              </button>
-              <button className="btn btn-danger" style={{ width: '100%', justifyContent: 'center' }} onClick={handleLogout}>
-                🚪 Logout
-              </button>
+        {/* 3. This Month Summary */}
+        <Section title="This Month Summary" icon={TrendingUp}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ background: 'var(--bg2)', padding: 20, borderRadius: 20, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 8 }}>Total Spent</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)' }}>₹{summary?.total_spent?.toLocaleString() || 0}</div>
+            </div>
+            <div style={{ background: 'var(--bg2)', padding: 20, borderRadius: 20, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 8 }}>Transactions</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--accent)' }}>{summary?.transaction_count || 0}</div>
             </div>
           </div>
+        </Section>
 
-          {/* Right: Edit form */}
-          <div className="card" style={{ padding: 32 }}>
-            <div className="card-title">✏️ Edit Profile</div>
-            <form onSubmit={e => { e.preventDefault(); updateMutation.mutate(form) }}>
-              <div className="form-group">
-                <label className="form-label">Display Name</label>
-                <input className="form-input" type="text" value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })} required />
+        {/* 4. Edit Profile */}
+        <Section title="Edit Profile" icon={Edit3}>
+          <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(form) }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }}>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <User size={12} color="var(--accent)" /> Full Name
+                  </label>
+                  <input 
+                    className="form-input" 
+                    style={{ borderRadius: 12, height: 48 }}
+                    value={form.name}
+                    onChange={e => setForm({...form, name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Mail size={12} color="var(--accent)" /> Email Address
+                  </label>
+                  <input 
+                    className="form-input" 
+                    style={{ borderRadius: 12, height: 48 }}
+                    type="email"
+                    value={form.email}
+                    onChange={e => setForm({...form, email: e.target.value})}
+                    required
+                  />
+                </div>
               </div>
+
               <div className="form-group">
-                <label className="form-label">Email</label>
-                <input className="form-input" type="email" value={form.email}
-                  disabled style={{ opacity: 0.6 }} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">
-                  Monthly Income (₹)
-                  <span style={{ marginLeft: 8, color: 'var(--text3)', fontSize: 12 }}>— used for AI health calculation</span>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Wallet size={12} color="var(--accent)" /> Monthly Income (₹)
                 </label>
-                <input className="form-input" type="number" min="0" placeholder="e.g. 50000"
+                <input 
+                  className="form-input" 
+                  style={{ borderRadius: 12, height: 48 }}
+                  type="number"
                   value={form.monthly_income}
-                  onChange={e => setForm({ ...form, monthly_income: e.target.value })} />
+                  onChange={e => setForm({...form, monthly_income: e.target.value})}
+                  required
+                />
               </div>
-              <button type="submit" className="btn btn-primary"
-                disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? <span className="spinner" /> : '💾 Save Changes'}
-              </button>
-            </form>
-          </div>
-        </div>
+            </div>
+
+            <button 
+              type="submit" 
+              className="btn btn-primary btn-hover-scale" 
+              style={{ 
+                width: '100%', borderRadius: 14, height: 54, fontWeight: 800,
+                fontSize: 15, letterSpacing: '0.3px',
+                boxShadow: '0 8px 20px rgba(108, 99, 255, 0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10
+              }}
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? 'Saving...' : <><Save size={20} /> Save Changes</>}
+            </button>
+          </form>
+        </Section>
+
       </div>
     </div>
   )
