@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',   // use env var or relative proxy
+  baseURL: import.meta.env.VITE_API_URL || 'https://smart-expense-tracker-0jwb.onrender.com',
 })
 
 // Attach token to every request
