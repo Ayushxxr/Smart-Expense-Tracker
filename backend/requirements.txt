@@ -6,7 +6,7 @@ python-multipart==0.0.9
 # ── Database ───────────────────────
 sqlalchemy==2.0.29
 # Uncomment for PostgreSQL production:
-# psycopg2-binary==2.9.9
+psycopg2-binary==2.9.9
 # asyncpg==0.29.0
 
 # ── Auth & Security ────────────────
@@ -20,7 +20,8 @@ pydantic-settings==2.2.1
 email-validator==2.1.1
 
 # ── File Parsing ───────────────────
-pandas==2.2.2
+numpy==1.26.4
+pandas==2.1.4
 pdfplumber==0.11.0
 openpyxl==3.1.2       # Excel support for pandas
 
@@ -31,8 +32,8 @@ openpyxl==3.1.2       # Excel support for pandas
 
 # ── AI & Machine Learning ──────────
 google-generativeai>=0.5.4
-scikit-learn==1.4.2
-joblib==1.4.0
+scikit-learn==1.3.2
+joblib==1.3.2
 
 # ── Utils ──────────────────────────
 python-dotenv==1.0.1

@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '',   // use relative URLs → goes through Vite proxy on any device
+  baseURL: import.meta.env.VITE_API_URL || '',   // use env var or relative proxy
 })
 
 // Attach token to every request
