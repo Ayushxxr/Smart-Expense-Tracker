@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_ID: str = "479290895754-uhc9bp5k5td47trtqrh3n46gueo9o1mt.apps.googleusercontent.com"
     GOOGLE_CLIENT_SECRET: str = ""
     GEMINI_API_KEY: str = ""
     GROQ_API_KEY: str = ""
