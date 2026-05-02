@@ -69,7 +69,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 
 
 @router.post("/social", response_model=TokenResponse)
-async def social_login(data: SocialLogin, db: Session = Depends(get_db)):
+def social_login(data: SocialLogin, db: Session = Depends(get_db)):
     email = None
     name = None
     social_id = None
