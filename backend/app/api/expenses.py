@@ -76,7 +76,7 @@ def list_expenses(
     if category:
         query = query.filter(Expense.category == category)
     if month:
-        query = query.filter(func.strftime("%Y-%m", Expense.expense_date) == month)
+        query = query.filter(func.to_char(Expense.expense_date, 'YYYY-MM') == month)
     if start_date:
         query = query.filter(Expense.expense_date >= start_date)
     if end_date:
