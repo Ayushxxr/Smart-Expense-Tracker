@@ -12,7 +12,6 @@ class User(Base):
     name = Column(String, nullable=False)
     hashed_password = Column(String, nullable=True)  # nullable for OAuth users
     google_id = Column(String, unique=True, nullable=True)
-    facebook_id = Column(String, unique=True, nullable=True)
     avatar_url = Column(String, nullable=True)
     financial_health_score = Column(Float, default=0.0)
     monthly_income = Column(Float, default=50000.0)   # used for health score

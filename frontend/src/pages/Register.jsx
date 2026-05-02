@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
-import { Wallet, Facebook } from 'lucide-react'
+import { Wallet } from 'lucide-react'
 import { GoogleLogin } from '@react-oauth/google'
-import FacebookLogin from 'react-facebook-login/dist/facebook-login-render-props'
 
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', monthly_income: '' })
@@ -71,17 +70,6 @@ export default function Register() {
             theme="filled_blue"
             shape="pill"
             width="346"
-          />
-          <FacebookLogin
-            appId={import.meta.env.VITE_FACEBOOK_APP_ID || ''}
-            callback={response => {
-              if (response.accessToken) handleSocialLogin('facebook', response.accessToken)
-            }}
-            render={renderProps => (
-              <button onClick={renderProps.onClick} className="btn btn-facebook" style={{ width: '100%' }}>
-                <Facebook size={18} fill="currentColor" /> Continue with Facebook
-              </button>
-            )}
           />
         </div>
 

@@ -89,22 +89,6 @@ async def social_login(data: SocialLogin, db: Session = Depends(get_db)):
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid Google token: {str(e)}")
 
-    elif data.provider == "facebook":
-        try:
-            async with httpx.AsyncClient() as client:
-                resp = await client.get(
-                    f"https://graph.facebook.com/me?fields=id,name,email,picture&access_token={data.token}"
-                )
-                if resp.status_code != 200:
-                    raise HTTPException(status_code=400, detail="Invalid Facebook token")
-                fb_data = resp.json()
-                email = fb_data.get("email")
-                name = fb_data.get("name")
-                social_id = fb_data.get("id")
-                avatar = fb_data.get("picture", {}).get("data", {}).get("url")
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Facebook authentication failed: {str(e)}")
-
     if not email:
         raise HTTPException(status_code=400, detail="Could not retrieve email from social provider")
 
@@ -117,15 +101,12 @@ async def social_login(data: SocialLogin, db: Session = Depends(get_db)):
             name=name or "Social User",
             avatar_url=avatar,
             google_id=social_id if data.provider == "google" else None,
-            facebook_id=social_id if data.provider == "facebook" else None,
         )
         db.add(user)
     else:
         # Update social ID if missing
         if data.provider == "google":
             user.google_id = social_id
-        else:
-            user.facebook_id = social_id
         
         # Update avatar if missing
         if avatar and not user.avatar_url:
