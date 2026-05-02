@@ -5,6 +5,7 @@ import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 import { Wallet } from 'lucide-react'
 import { GoogleLogin } from '@react-oauth/google'
+import { queryClient } from '../App'
 
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', monthly_income: '' })
@@ -16,6 +17,7 @@ export default function Register() {
     setLoading(true)
     try {
       const { data } = await api.post('/api/auth/social', { provider, token })
+      queryClient.clear()
       setAuth(data.user, data.access_token)
       toast.success(`Welcome, ${data.user.name}!`)
       navigate('/dashboard')
@@ -37,6 +39,7 @@ export default function Register() {
         monthly_income: form.monthly_income ? parseFloat(form.monthly_income) : null
       }
       const { data } = await api.post('/api/auth/register', payload)
+      queryClient.clear()
       setAuth(data.user, data.access_token)
       toast.success(`Welcome, ${data.user.name}!`)
       navigate('/dashboard')

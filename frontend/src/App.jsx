@@ -20,7 +20,7 @@ import Settings from './pages/Settings'
 import CategoryDetails from './pages/CategoryDetails'
 import './index.css'
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } }
 })
 
@@ -132,7 +132,11 @@ function ProtectedLayout({ children }) {
                   </button>
                   <button 
                     className="dropdown-item"
-                    onClick={() => { logout(); navigate('/login') }}
+                    onClick={() => { 
+                      logout()
+                      queryClient.clear()
+                      navigate('/login') 
+                    }}
                     style={{ 
                       width: '100%', display: 'flex', alignItems: 'center', gap: 12, 
                       padding: '10px 12px', border: 'none', background: 'transparent',

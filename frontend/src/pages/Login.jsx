@@ -5,6 +5,7 @@ import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 import { Wallet, Eye, EyeOff } from 'lucide-react'
 import { GoogleLogin } from '@react-oauth/google'
+import { queryClient } from '../App'
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
@@ -21,6 +22,7 @@ export default function Login() {
     setLoading(true)
     try {
       const { data } = await api.post('/api/auth/social', { provider, token })
+      queryClient.clear()
       setAuth(data.user, data.access_token)
       toast.success(`Welcome back, ${data.user.name}!`)
       navigate('/dashboard')
@@ -39,6 +41,7 @@ export default function Login() {
         ...form,
         email: form.email.trim()
       })
+      queryClient.clear()
       setAuth(data.user, data.access_token)
       toast.success(`Welcome back, ${data.user.name}!`)
       navigate('/dashboard')
