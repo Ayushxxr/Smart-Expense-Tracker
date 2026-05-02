@@ -14,10 +14,13 @@ router = APIRouter(prefix="/api/budgets", tags=["budgets"])
 
 
 def _get_spent(db, user_id, category, month_year):
+    # month_year is "YYYY-MM"
+    year, month = map(int, month_year.split("-"))
     return db.query(func.sum(Expense.amount)).filter(
         Expense.user_id == user_id,
         Expense.category == category,
-        func.strftime("%Y-%m", Expense.expense_date) == month_year
+        extract("year", Expense.expense_date) == year,
+        extract("month", Expense.expense_date) == month
     ).scalar() or 0.0
 
 
