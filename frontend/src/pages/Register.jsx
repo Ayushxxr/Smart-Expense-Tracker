@@ -17,6 +17,8 @@ export default function Register() {
     try {
       const payload = {
         ...form,
+        name: form.name.trim(),
+        email: form.email.trim(),
         monthly_income: form.monthly_income ? parseFloat(form.monthly_income) : null
       }
       const { data } = await api.post('/api/auth/register', payload)

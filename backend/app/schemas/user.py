@@ -7,6 +7,7 @@ class UserRegister(BaseModel):
     name: str
     email: EmailStr
     password: str
+    monthly_income: Optional[float] = None
 
 
 class UserLogin(BaseModel):

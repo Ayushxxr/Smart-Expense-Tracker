@@ -20,7 +20,10 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     try {
-      const { data } = await api.post('/api/auth/login', form)
+      const { data } = await api.post('/api/auth/login', {
+        ...form,
+        email: form.email.trim()
+      })
       setAuth(data.user, data.access_token)
       toast.success(`Welcome back, ${data.user.name}!`)
       navigate('/dashboard')

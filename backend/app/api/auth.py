@@ -22,14 +22,16 @@ def user_to_schema(user: User) -> UserOut:
 
 @router.post("/register", response_model=TokenResponse)
 def register(data: UserRegister, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == data.email).first()
+    email = data.email.lower().strip()
+    existing = db.query(User).filter(User.email == email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
         name=data.name,
-        email=data.email,
-        hashed_password=hash_password(data.password)
+        email=email,
+        hashed_password=hash_password(data.password),
+        monthly_income=data.monthly_income if data.monthly_income is not None else 50000.0
     )
     db.add(user)
     db.commit()
@@ -46,7 +48,8 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == data.email).first()
+    email = data.email.lower().strip()
+    user = db.query(User).filter(User.email == email).first()
     if not user or not user.hashed_password:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     if not verify_password(data.password, user.hashed_password):
