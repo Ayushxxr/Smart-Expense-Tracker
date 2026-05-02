@@ -367,7 +367,7 @@ export default function Dashboard() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                   <div style={{ fontSize: 7, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>REMAINING</div>
                   <div style={{ fontSize: 14, fontWeight: 900, color: 'var(--accent)', letterSpacing: '-0.3px' }}>
-                    ₹{Math.round(summary?.monthly_income - summary?.total_spent).toLocaleString('en-IN')}
+                    {loading ? '—' : `₹${Math.round((summary?.monthly_income || 0) - (summary?.total_spent || 0)).toLocaleString('en-IN')}`}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -376,7 +376,7 @@ export default function Dashboard() {
                     color: (summary?.total_spent / (summary?.monthly_income || 1)) > 1 ? 'var(--red)' : 'var(--text)',
                     lineHeight: 1
                   }}>
-                    {Math.round((summary?.total_spent / (summary?.monthly_income || 1)) * 100)}%
+                    {loading ? '0' : Math.round(((summary?.total_spent || 0) / (summary?.monthly_income || 1)) * 100)}%
                   </div>
                   <div style={{ fontSize: 6.5, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.2px', marginTop: 1 }}>used</div>
                 </div>
