@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
-import { Wallet, Eye, EyeOff } from 'lucide-react'
+import { Wallet, Eye, EyeOff, Facebook } from 'lucide-react'
+import { GoogleLogin } from '@react-oauth/google'
+import FacebookLogin from 'react-facebook-login/dist/facebook-login-render-props'
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
@@ -14,6 +16,20 @@ export default function Login() {
 
   const fillDemo = () => {
     setForm({ email: 'demo@expense.com', password: 'demo1234' })
+  }
+
+  const handleSocialLogin = async (provider, token) => {
+    setLoading(true)
+    try {
+      const { data } = await api.post('/api/auth/social', { provider, token })
+      setAuth(data.user, data.access_token)
+      toast.success(`Welcome back, ${data.user.name}!`)
+      navigate('/dashboard')
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Social login failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -49,6 +65,29 @@ export default function Login() {
           <h1 className="auth-title">ExpenseAI</h1>
           <p className="auth-sub">Smart expense tracking with AI</p>
         </div>
+
+        <div className="social-auth">
+          <GoogleLogin
+            onSuccess={credentialResponse => handleSocialLogin('google', credentialResponse.credential)}
+            onError={() => toast.error('Google Login Failed')}
+            theme="filled_blue"
+            shape="pill"
+            width="346"
+          />
+          <FacebookLogin
+            appId={import.meta.env.VITE_FACEBOOK_APP_ID || ''}
+            callback={response => {
+              if (response.accessToken) handleSocialLogin('facebook', response.accessToken)
+            }}
+            render={renderProps => (
+              <button onClick={renderProps.onClick} className="btn btn-facebook" style={{ width: '100%' }}>
+                <Facebook size={18} fill="currentColor" /> Continue with Facebook
+              </button>
+            )}
+          />
+        </div>
+
+        <div className="auth-divider">or login with email</div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">

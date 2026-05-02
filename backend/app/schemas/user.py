@@ -15,6 +15,11 @@ class UserLogin(BaseModel):
     password: str
 
 
+class SocialLogin(BaseModel):
+    provider: str
+    token: str
+
+
 class UserOut(BaseModel):
     id: str
     name: str
