@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
+import apiClient from '../api/client'
 
 // ── PIN Lock Modal ──────────────────────────────────────────────
 function PinSetupModal({ onClose, onSuccess }) {
@@ -79,18 +80,12 @@ export default function Settings() {
   const handleExportCSV = async () => {
     try {
       toast.loading('Preparing CSV export...', { id: 'csv' })
-      const token = localStorage.getItem('access_token')
       
-      // Use the backend export endpoint
-      const response = await fetch('/api/expenses/export', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await apiClient.get('/api/expenses/export', {
+        responseType: 'blob'
       })
       
-      if (!response.ok) throw new Error('Export failed')
-      
-      const blob = await response.blob()
+      const blob = new Blob([response.data], { type: 'text/csv' })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -112,16 +107,8 @@ export default function Settings() {
     
     try {
       toast.loading('Clearing all financial data...', { id: 'clear_data' })
-      const token = localStorage.getItem('access_token')
       
-      const response = await fetch('/api/expenses/clear', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      
-      if (!response.ok) throw new Error('Failed to clear data')
+      await apiClient.delete('/api/expenses/clear')
       
       // Purge query cache and invalidate to trigger reactive UI reload
       queryClient.clear()
