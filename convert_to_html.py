@@ -3,8 +3,8 @@ import sys
 import os
 
 # ── Read the source markdown ──────────────────────────────────────────────────
-MD_PATH = r"C:\Users\ayush\.gemini\antigravity\brain\3c37e0c5-bec8-479f-b37c-9dacaac25849\process_step_by_step.md"
-OUT_PATH = r"C:\Users\ayush\Desktop\SMART EXPENSE TRACKER\process_step_by_step.html"
+MD_PATH = r"C:\Users\ayush\Desktop\SMART EXPENSE TRACKER\full_application_explanation_50pages.md"
+OUT_PATH = r"C:\Users\ayush\Desktop\SMART EXPENSE TRACKER\full_application_explanation_50pages.html"
 
 with open(MD_PATH, "r", encoding="utf-8") as f:
     md = f.read()
@@ -177,7 +177,7 @@ html = f"""<!DOCTYPE html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smart Expense Tracker — Process Step by Step</title>
+  <title>Smart Expense Tracker — Full Application Masterclass Manual</title>
 
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
@@ -365,11 +365,41 @@ html = f"""<!DOCTYPE html>
 
     /* ── Print Styles ───────────────────────────────────────────────── */
     @media print {{
-      body {{ padding: 20px 24px; font-size: 12.5px; max-width: 100%; }}
-      .mermaid-wrap {{ break-inside: avoid; page-break-inside: avoid; }}
-      .code-block {{ break-inside: avoid; page-break-inside: avoid; }}
-      h1, h2, h3 {{ page-break-after: avoid; }}
-      table {{ break-inside: avoid; }}
+      body {{ padding: 20px 24px; font-size: 12.5px; max-width: 100%; color: #000000 !important; }}
+      h1, h2, h3 {{ page-break-after: avoid; color: #000000 !important; }}
+      .code-block {{ 
+        background: #ffffff !important; 
+        border: 1.5px solid #d1d5db !important; 
+        break-inside: avoid; 
+        page-break-inside: avoid; 
+      }}
+      .code-lang {{ 
+        background: #f3f4f6 !important; 
+        color: #374151 !important; 
+        border-bottom: 1.5px solid #d1d5db !important; 
+      }}
+      .code-block pre code {{ 
+        color: #111827 !important; 
+      }}
+      .mermaid-wrap {{ 
+        background: #ffffff !important; 
+        border: 1.5px solid #d1d5db !important; 
+        break-inside: avoid; 
+        page-break-inside: avoid; 
+      }}
+      table {{ 
+        border: 1.5px solid #d1d5db !important; 
+        break-inside: avoid; 
+      }}
+      td {{ 
+        border-bottom: 1.5px solid #e5e7eb !important; 
+        color: #000000 !important; 
+      }}
+      blockquote {{ 
+        background: #f3f4f6 !important; 
+        border-left: 4px solid #4b5563 !important; 
+        color: #111827 !important; 
+      }}
     }}
   </style>
 </head>
@@ -382,10 +412,10 @@ html = f"""<!DOCTYPE html>
 with open(OUT_PATH, "w", encoding="utf-8") as f:
     f.write(html)
 
-print(f"\n✅ Done! File saved to:\n   {OUT_PATH}")
-print("\n📌 Next steps:")
+print(f"\n[OK] Done! File saved to:\n   {OUT_PATH}")
+print("\n[INFO] Next steps:")
 print("   1. Open the file in Google Chrome")
 print("   2. Wait 3-4 seconds for diagrams to fully render")
-print("   3. Press Ctrl+P → Change Destination to 'Save as PDF'")
-print("   4. Set: Margins = None, Scale = 85%, ✅ Background graphics")
-print("   5. Click Save → Your PDF is ready!")
+print("   3. Press Ctrl+P -> Change Destination to 'Save as PDF'")
+print("   4. Set: Margins = None, Scale = 85%, [x] Background graphics")
+print("   5. Click Save -> Your PDF is ready!")

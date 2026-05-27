@@ -5,6 +5,7 @@ import {
   EyeOff, Lock, Globe, Moon, Sun, Smartphone, Sparkles, Mail, X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useQueryClient } from '@tanstack/react-query'
 
 // ── PIN Lock Modal ──────────────────────────────────────────────
 function PinSetupModal({ onClose, onSuccess }) {
@@ -73,6 +74,7 @@ export default function Settings() {
   })
 
   const [showPinSetup, setShowPinSetup] = useState(false)
+  const queryClient = useQueryClient()
 
   const handleExportCSV = async () => {
     try {
@@ -100,6 +102,34 @@ export default function Settings() {
       toast.success('Export complete! 📊', { id: 'csv' })
     } catch (err) {
       toast.error('Export failed', { id: 'csv' })
+    }
+  }
+
+  const handleClearData = async () => {
+    if (!confirm('Are you absolutely sure you want to clear all your financial data? This will wipe all expenses and budgets. This cannot be undone!')) {
+      return
+    }
+    
+    try {
+      toast.loading('Clearing all financial data...', { id: 'clear_data' })
+      const token = localStorage.getItem('access_token')
+      
+      const response = await fetch('/api/expenses/clear', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (!response.ok) throw new Error('Failed to clear data')
+      
+      // Purge query cache and invalidate to trigger reactive UI reload
+      queryClient.clear()
+      queryClient.invalidateQueries()
+      
+      toast.success('All transactions and budgets cleared! 🧹', { id: 'clear_data' })
+    } catch (err) {
+      toast.error('Failed to clear data history', { id: 'clear_data' })
     }
   }
 
@@ -244,10 +274,10 @@ export default function Settings() {
             onClick={handleExportCSV}
           />
           <SettingItem 
-            label="Clear History" 
-            description="Remove all transaction data but keep categories"
+            label="Clear Data" 
+            description="Remove all expense data and budgets"
             danger
-            onClick={() => confirm('Clear all history? This cannot be undone.') && toast.error('History cleared')}
+            onClick={handleClearData}
           />
         </SettingSection>
 

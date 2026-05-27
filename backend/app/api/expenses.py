@@ -108,6 +108,19 @@ def update_expense(
     return expense
 
 
+@router.delete("/clear")
+def clear_all_expenses(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete all transactions and budgets for the logged in user."""
+    from app.models.budget import Budget
+    db.query(Expense).filter(Expense.user_id == current_user.id).delete()
+    db.query(Budget).filter(Budget.user_id == current_user.id).delete()
+    db.commit()
+    return {"message": "All expense history and budgets cleared successfully"}
+
+
 @router.delete("/{expense_id}")
 def delete_expense(
     expense_id: str,
