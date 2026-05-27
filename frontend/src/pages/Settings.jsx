@@ -62,16 +62,32 @@ export default function Settings() {
   const isHidden = document.body.classList.contains('hide-balance')
   const hasPin = !!localStorage.getItem('app_pin')
 
-  const [settings, setSettings] = useState({
-    budgetAlerts: true,
-    overspendingAlerts: true,
-    unusualActivity: false,
-    autoCategorization: true,
-    aiInsights: true,
-    hideBalance: isHidden,
-    appLock: hasPin,
-    darkMode: !isLight,
-    currency: 'INR (₹)',
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('app_settings')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        return {
+          ...parsed,
+          hideBalance: isHidden,
+          appLock: hasPin,
+          darkMode: !isLight,
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    return {
+      budgetAlerts: true,
+      overspendingAlerts: true,
+      unusualActivity: false,
+      autoCategorization: true,
+      aiInsights: true,
+      hideBalance: isHidden,
+      appLock: hasPin,
+      darkMode: !isLight,
+      currency: 'INR (₹)',
+    }
   })
 
   const [showPinSetup, setShowPinSetup] = useState(false)
@@ -142,20 +158,47 @@ export default function Settings() {
     }
   }, [settings.hideBalance])
 
-  const toggle = (key) => {
+  const toggle = async (key) => {
     if (key === 'appLock') {
       if (settings.appLock) {
-        // Disabling
         localStorage.removeItem('app_pin')
-        setSettings(s => ({ ...s, appLock: false }))
+        setSettings(s => {
+          const ns = { ...s, appLock: false }
+          localStorage.setItem('app_settings', JSON.stringify(ns))
+          return ns
+        })
         toast.success('App Lock Disabled')
       } else {
-        // Enabling
         setShowPinSetup(true)
       }
       return
     }
-    setSettings(s => ({ ...s, [key]: !s[key] }))
+
+    const isEnabling = !settings[key]
+    
+    // Explicitly request browser notification permissions if enabling alerts
+    if (isEnabling && ['budgetAlerts', 'overspendingAlerts', 'unusualActivity'].includes(key)) {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') {
+          toast.error('Permission denied. Please enable notifications in browser/PWA settings.')
+          return
+        }
+      } else {
+        toast.error('System notifications are not supported on this browser.')
+        return
+      }
+    }
+
+    setSettings(s => {
+      const ns = { ...s, [key]: !s[key] }
+      localStorage.setItem('app_settings', JSON.stringify(ns))
+      
+      if (isEnabling && ['budgetAlerts', 'overspendingAlerts', 'unusualActivity'].includes(key)) {
+        toast.success('Alert Enabled! 🔔')
+      }
+      return ns
+    })
   }
 
   const SettingSection = ({ title, icon: Icon, children }) => (

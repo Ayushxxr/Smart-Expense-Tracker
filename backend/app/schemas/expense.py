@@ -33,6 +33,7 @@ class ExpenseOut(BaseModel):
     source: str
     is_anomaly: bool
     created_at: datetime
+    budget_alert: Optional[str] = None
 
     class Config:
         from_attributes = True

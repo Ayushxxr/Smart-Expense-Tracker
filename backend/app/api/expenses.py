@@ -58,6 +58,46 @@ def create_expense(
     db.add(expense)
     db.commit()
     db.refresh(expense)
+
+    # ── Real-Time Notification & Budget Alert Engine ──
+    try:
+        # 1. Budget & Overspending Alerts
+        from app.models.budget import Budget
+        my = f"{expense.expense_date.year}-{expense.expense_date.month:02d}"
+        budget = db.query(Budget).filter(
+            Budget.user_id == current_user.id,
+            Budget.category == expense.category,
+            Budget.month_year == my
+        ).first()
+        
+        if budget:
+            from app.api.budgets import _get_spent
+            spent = _get_spent(db, current_user.id, expense.category, my)
+            limit = budget.limit_amount
+            if limit > 0:
+                pct = (spent / limit) * 100
+                if pct >= 100:
+                    expense.budget_alert = f"LIMIT_EXCEEDED|You have spent ₹{spent:,.2f} of ₹{limit:,.2f} limit on {expense.category}!"
+                elif pct >= 80:
+                    expense.budget_alert = f"THRESHOLD_80|You have used {pct:.1f}% (₹{spent:,.2f} of ₹{limit:,.2f}) of your {expense.category} budget!"
+
+        # 2. Unusual Activity Anomaly Alerts (z-score method)
+        if not expense.budget_alert or "THRESHOLD_80" in expense.budget_alert:
+            recent_expenses = db.query(Expense).filter(
+                Expense.user_id == current_user.id
+            ).order_by(Expense.expense_date.desc()).limit(100).all()
+            
+            if len(recent_expenses) >= 5:
+                amounts = [e.amount for e in recent_expenses]
+                mean = sum(amounts) / len(amounts)
+                std = (sum((x - mean) ** 2 for x in amounts) / len(amounts)) ** 0.5
+                
+                z = (expense.amount - mean) / std if std > 0 else 0
+                if z > 2.0:
+                    expense.budget_alert = f"UNUSUAL_ACTIVITY|Unusual activity: This ₹{expense.amount:,.2f} transaction is unusually high compared to your average (₹{mean:,.2f})!"
+    except Exception as e:
+        print(f"[REAL-TIME ALERT ENGINE ERROR] {e}")
+
     return expense
 
 

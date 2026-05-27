@@ -12,3 +12,17 @@ createRoot(document.getElementById('root')).render(
     </GoogleOAuthProvider>
   </StrictMode>,
 )
+
+// Register Service Worker for PWA/Push Notification support on mobile devices (Android/iOS)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => {
+        console.log('Service Worker registered successfully with scope:', reg.scope)
+      })
+      .catch((err) => {
+        console.error('Service Worker registration failed:', err)
+      })
+  })
+}
+
