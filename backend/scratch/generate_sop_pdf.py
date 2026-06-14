@@ -1,6 +1,6 @@
 import os
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
@@ -8,28 +8,28 @@ from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
 def generate_sop_pdf():
     output_path = r"c:\Users\ayush\Desktop\SMART EXPENSE TRACKER\Ayush_Raj_SOP_Amazon_MLSS_2026.pdf"
     
-    # Human-sounding 400-word text
+    # Technical yet natural 415-word SOP text
     p1 = """
-    My interest in Artificial Intelligence and Machine Learning comes from a desire to build applications that solve practical, everyday problems. To gain hands-on experience, I built <b>Smart Expense Tracker</b>, a full-stack Progressive Web App (PWA) using React, FastAPI, and PostgreSQL. I wanted to see how machine learning could make managing personal finance easier and more automated.
+    My focus in Artificial Intelligence and Machine Learning lies in building production-grade applications that solve practical data problems. To gain hands-on experience, I developed <b>Smart Expense Tracker</b>, a full-stack Progressive Web App (PWA) engineered with <b>React (Vite)</b>, <b>FastAPI (ASGI)</b>, and <b>PostgreSQL (Supabase)</b> to automate personal financial tracking and analyze transaction datasets.
     """
     
     p2 = """
-    During this project, I worked with several key ML areas. First, I integrated Large Language Models (LLMs) via <b>Gemini and Groq APIs</b> to create a conversational assistant. I wrote custom system prompts to parse unstructured user chat messages into structured JSON schemas that match our PostgreSQL database models. Second, I set up a <b>Computer Vision (OCR)</b> pipeline to automatically extract transaction details from uploaded receipt photos. Third, I implemented a statistical <b>Z-Score anomaly detection algorithm</b> to flag unusual transactions. If a user’s new transaction was more than 2.0 standard deviations away from their average spending, the app triggered a budget alert. While building this was a great learning experience, it made me realize the limits of using pre-built APIs. I had very little control over model accuracy, latency, and data privacy.
+    During this project, I implemented three distinct ML pipelines. First, I integrated Large Language Models (LLMs) via <b>Gemini and Groq APIs</b> to build a conversational assistant. I designed custom <b>system prompts</b> and <b>context constraints</b> to parse unstructured natural language chat inputs into <b>structured JSON schemas</b> matching our SQLAlchemy <b>ORM models</b>. Second, I set up a <b>Computer Vision (OCR) pipeline</b> to segment and extract transaction details from uploaded receipt photos. Third, I implemented a statistical <b>Z-Score anomaly detection algorithm</b> to flag outlier transactions. If a new transaction exceeded a threshold of <b>2.0 standard deviations</b> from the user's running historical average, the app triggered a budget alert. While integrating these APIs was a great exercise, it highlighted the limitations of relying on black-box third-party models, particularly regarding inference latency, data privacy, and the lack of custom fine-tuning capability.
     """
     
     p3 = """
-    This project helped me identify the gaps in my current machine learning knowledge. I want to move beyond calling black-box APIs and learn how to train and fine-tune custom models myself. In computer vision, instead of using generic OCR endpoints, I want to learn to build and optimize custom Convolutional Neural Networks (CNNs) and Vision Transformers (ViTs) to handle noisy, low-quality receipt images. On the data side, simple statistical Z-scores assume data is normally distributed, which isn't always true for real spending habits. I want to learn advanced unsupervised techniques like Isolation Forests or autoencoders to build better anomaly detectors. Finally, I need to learn how to manage large-scale datasets and deploy low-latency models on cloud platforms like AWS.
+    This project helped me identify key gaps in my current machine learning knowledge. I want to move beyond calling third-party API endpoints and learn to train, evaluate, and deploy <b>custom models</b> myself. In computer vision, instead of generic OCR, I want to study <b>Convolutional Neural Networks (CNNs)</b> and <b>Vision Transformers (ViTs)</b> to build custom segmenting models that handle noisy, low-resolution receipt images. On the data side, simple statistical Z-scores assume a Gaussian distribution, which is rarely true for skewed transactional data. I want to master unsupervised anomaly detection algorithms, such as <b>Isolation Forests</b> and <b>Autoencoders</b>, to identify complex fraudulent patterns. Finally, I need to learn about <b>feature engineering</b>, handling imbalanced datasets, and deploying optimized models on cloud platforms like <b>AWS SageMaker</b>.
     """
     
     p4 = """
-    The Amazon ML Summer School (MLSS) 2026 is exactly what I need to bridge these gaps. Learning directly from Amazon's ML scientists about deep learning, vision, and NLP matches my goal of transitioning from a full-stack developer to a machine learning engineer. With a strong academic background (CGPA: 8.93) and practical development experience, I am ready to take this next step. I am confident this program will give me the mathematical foundation and engineering skills to build next-generation AI systems.
+    The Amazon ML Summer School (MLSS) 2026 is the perfect opportunity to bridge these gaps. Learning directly from Amazon's ML scientists about <b>deep learning theory, optimization, and NLP</b> matches my career goal of transitioning from a full-stack software developer to a specialized machine learning engineer. With a strong academic record (<b>CGPA: 8.93</b>) and practical deployment experience, I am ready for this academic challenge. I am confident this program will provide the mathematical foundations and engineering principles needed to build next-generation intelligent systems.
     """
     
     # Calculate exact word count
     full_text = " ".join([p1, p2, p3, p4])
     words = [w for w in full_text.split() if w.strip()]
     word_count = len(words)
-    print(f"[*] Human SOP word count: {word_count} words.")
+    print(f"[*] Technical SOP word count: {word_count} words.")
     
     # Page setup
     doc = SimpleDocTemplate(
@@ -69,8 +69,8 @@ def generate_sop_pdf():
         name='SOPBody',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=10.5, # Slightly larger body text as it's shorter
-        leading=15,
+        fontSize=10.2, # Perfectly sized for 415 words on one page
+        leading=14.5,
         textColor=colors.HexColor('#333333'),
         alignment=TA_JUSTIFY,
         spaceAfter=12
@@ -82,12 +82,20 @@ def generate_sop_pdf():
     story.append(Paragraph("STATEMENT OF PURPOSE", title_style))
     story.append(Spacer(1, 5))
     
-    # 2. Metadata Block
-    meta_text = """
-    <b>Applicant Name:</b> Ayush Raj &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>CGPA:</b> 8.93<br/>
-    <b>Target Program:</b> Amazon ML Summer School 2026 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Date:</b> June 14, 2026
-    """
-    story.append(Paragraph(meta_text, meta_label_style))
+    # 2. Metadata Block (Using Table for perfect grid alignment)
+    meta_data = [
+        [Paragraph("<b>Applicant Name:</b> Ayush Raj", meta_label_style), Paragraph("<b>CGPA:</b> 8.93", meta_label_style)],
+        [Paragraph("<b>Target Program:</b> Amazon ML Summer School 2026", meta_label_style), Paragraph("<b>Date:</b> June 14, 2026", meta_label_style)]
+    ]
+    meta_table = Table(meta_data, colWidths=[320, 184])
+    meta_table.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+    ]))
+    
+    story.append(meta_table)
     story.append(Spacer(1, 8))
     
     # 3. Horizontal Line
@@ -96,7 +104,7 @@ def generate_sop_pdf():
         thickness=1, 
         color=colors.HexColor('#FF9900'), # Amazon Orange
         spaceBefore=3, 
-        spaceAfter=12
+        spaceAfter=15
     ))
     
     # 4. Paragraphs
